@@ -1,0 +1,200 @@
+This package was debianized by Florian Ragwitz <rafl@debian.org>
+on  Fri, 31 Mar 2006 19:29:57 +0200
+
+It's based on unofficial packages by Jens Taprogge
+<jens.taprogge@post.rwth-aachen.de> on Tue, 10 May 2005 22:49:19 +0200.
+
+It was downloaded from http://xmms2.xmms.org/
+
+Copyright:
+
+Most of the code is Copyright (C) 2003-2008 XMMS2 Team and licensed under the
+GNU Lesser General Public License (LGPL).
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+That means plugins are not considered to be derived work.
+
+On Debian GNU/Linux systems, the complete text of the GNU Lesser General Public
+License can be found in /usr/share/common-licenses/LGPL.
+
+
+Some parts of the code have other copyright holders or licenses:
+
+README, INSTALL:
+        Licensed under GFDL without unmodifiable sections.
+
+manpages (src/clients/cli/xmms2.1, src/clients/et/xmms2-et.1,
+          src/clients/launcher/xmms2-launcher.1,
+          src/clients/mdns/avahi/xmms2-mdns-avahi.1,
+          src/xmms/xmms2d.1
+          src/clients/nycli/nyxmms2.1):
+        Licensed under BSD license
+
+src/plugins/mad/*.[ch]:
+        Licensed under GPL license.
+
+src/plugins/mad/xing.c:
+        Uses code base on/copied from madplay:
+        Copyright (C) 2000-2004 Robert Leslie
+
+src/plugins/mp4/mp4.c:
+        Licensed under GPL license.
+
+src/plugins/mp4/mp4ff/drms*:
+        Copyright (C) 2004 VideoLAN
+        Licensed under GPL license.
+
+src/plugins/mp4/mp4ff/mp4*:
+        Copyright (C) 2003-2004 M. Bakker, Ahead Software AG, http://www.nero.com
+        Licensed under GPL license.
+
+src/plugins/sid/*:
+        Licensed under GPL license.
+
+src/plugins/sid/md5.*:
+        Copyright (C) 1999 Aladdin Enterprises.
+        Licensed under BSD-style license.
+
+src/plugins/equalizer/eq.c:
+        Licensed under GPL license.
+
+src/plugins/equalizer/iir*:
+        Copyright (C) 2002-2006 Felipe Rivera <liebremx@users.sourceforge.net>
+        Licensed under GPL license.
+
+src/plugins/vocoder/vocoder.c:
+        Licensed under GPL license.
+
+src/plugins/vocoder/pvocoder*:
+        Copyright (C) 2006 Juho Vähä-Herttua <juhovh@iki.fi>
+        Licensed under GPL license.
+
+src/plugins/asf/libasf/*:
+        Copyright (C) 2006-2007 Juho Vähä-Herttua <juhovh@iki.fi>
+
+src/plugins/ices/*:
+        Licensed under GPL license.
+
+src/plugins/ices/encode.*:
+        Copyright (c) 2001 Michael Smith <msmith@labyrinth.net.au>
+
+src/plugins/jack/jack.c:
+        Copyright (C) 2004  Chris Morgan <cmorgan@alum.wpi.edu>
+
+src/plugins/normalise/compress*
+        Copyright (C) 2002-2003 trikuare studios (http://trikuare.cx)
+
+src/plugins/daap/daap_md5.*:
+        Copyright (C) 2004,2005 Charles Schmidt <cschmidt2@emich.edu>
+        Licensed under GPL license.
+        Uses code base on/copied from libopendaap:
+        Copyright (c) 2004 David Hammerton
+
+src/plugins/daap/*:
+        Licensed under GPL license.
+
+src/plugins/normalize/compress*:
+        Copyright (C) 2002-2003 trikuare studios (http://trikuare.cx)
+
+src/plugins/airplay/rtsp*:
+        Copyright (C) <2005> Wim Taymans <wim@fluendo.com>
+
+src/plugins/airplay/airplay.c:
+        Copyright (C) 2005-2006 Mohsin Patel <mohsin.patel@gmail.com>
+
+src/includepriv/xmmspriv/xmms_list.h:
+        Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
+
+src/xmms/bindata.c:
+        Partially: Copyright (C) 1999, 2000, 2002 Aladdin Enterprises.  All rights reserved.
+        Licensed under BSD license.
+
+wafadmin/:
+        Copyright (C) 2005 Thomas Nagy
+        Licensed under BSD license.
+
+wafadmin/libtool_config.py:
+        Copyright (C) 2006  Matthias Jahn <jahn.matthias@freenet.de>
+
+wafadmin/pproc.py:
+        Copyright (C) 2003-2004 by Peter Astrand <astrand@lysator.liu.se>
+
+src/clients/nycli/:
+        Licensed under GPL license.
+
+src/clients/lib/perl/:
+        Copyright (C) 2006-2007 Florian Ragwitz <rafl@debian.org>
+        Licensed under the same terms as Perl itself.
+
+src/clients/lib/perl/ppport.h:
+        2004-2007, Marcus Holland-Moritz
+        Licensed under the same terms as Perl itself.
+
+src/plugins/gme/gme/*
+        Game_Music_Emu library copyright (C) 2003-2006 Shay Green <gblargg@gmail.com>.
+        SNES SPC DSP emulator based on OpenSPC, copyright (C) 2002 Brad Martin.
+        Sega Genesis YM2612 emulator copyright (C) 2002 Stephane Dallongeville.
+
+src/plugins/karaoke/*
+        Heavily based on DeFX, copyright (C) 2002 Franco Catrin L. <ancelot@directo.cl>.
+        Licensed under GPL license.
+
+src/plugins/samba/samba.c
+        Licensed under the GPL
+
+src/plugins/faad/faad.c
+        Licensed under the GPL
+
+Modifications to the above files are Copyright (C) 2003-2008 XMMS2 Team.
+
+
+A list of all contributors is available in the AUTHORS file.
+
+
+Some pieces of code are licensed under the GNU General Public License (GPL):
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+
+The manpages in doc/ are licensed under the BSD license:
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
+3. Neither the name of the University nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.

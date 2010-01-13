@@ -1,0 +1,4 @@
+/usr/bin/xmms2-ripper
+/usr/bin/xmms2-libvisual
+../xmms2-libvisual.1 usr/share/man/man1
+../xmms2-ripper.1 usr/share/man/man1

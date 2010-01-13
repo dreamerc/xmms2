@@ -1,0 +1,81 @@
+From: Benjamin Drung <bdrung@ubuntu.com>
+Subject: [PATCH] fixes/spelling-error
+
+Correct spelling error found by Lintian.
+
+Signed-off-by: Benjamin Drung <bdrung@ubuntu.com>
+
+---
+ src/clients/medialib-updater/fam.c  |    2 +-
+ src/clients/medialib-updater/main.c |    2 +-
+ src/plugins/mp4/mp4ff/mp4meta.c     |    2 +-
+ src/xmms/main.c                     |    6 +++---
+ 4 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/src/clients/medialib-updater/fam.c b/src/clients/medialib-updater/fam.c
+index cbf4694..f0fef61 100644
+--- a/src/clients/medialib-updater/fam.c
++++ b/src/clients/medialib-updater/fam.c
+@@ -100,7 +100,7 @@ monitor_init (xmonitor_t *mon)
+ 
+ 	fdata = g_new0 (fam_data_t, 1);
+ 	if (FAMOpen (&fdata->fc) < 0) {
+-		ERR ("Couldn't initalize FAM");
++		ERR ("Couldn't initialize FAM");
+ 		return -1;
+ 	}
+ 	fdata->hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+diff --git a/src/clients/medialib-updater/main.c b/src/clients/medialib-updater/main.c
+index e65664a..8f5cf25 100644
+--- a/src/clients/medialib-updater/main.c
++++ b/src/clients/medialib-updater/main.c
+@@ -324,7 +324,7 @@ main (int argc, char **argv)
+ 	mon->conn = conn;
+ 
+ 	if (fd == -1) {
+-		ERR ("Couldn't initalize monitor");
++		ERR ("Couldn't initialize monitor");
+ 		return EXIT_FAILURE;
+ 	}
+ 
+diff --git a/src/plugins/mp4/mp4ff/mp4meta.c b/src/plugins/mp4/mp4ff/mp4meta.c
+index 2357fc1..85ab572 100644
+--- a/src/plugins/mp4/mp4ff/mp4meta.c
++++ b/src/plugins/mp4/mp4ff/mp4meta.c
+@@ -123,7 +123,7 @@ static const char* ID3v1GenreList[] = {
+     "Ethnic", "Gothic", "Darkwave", "Techno-Industrial", "Electronic", "Pop-Folk",
+     "Eurodance", "Dream", "Southern Rock", "Comedy", "Cult", "Gangsta",
+     "Top 40", "Christian Rap", "Pop/Funk", "Jungle", "Native American", "Cabaret",
+-    "New Wave", "Psychadelic", "Rave", "Showtunes", "Trailer", "Lo-Fi",
++    "New Wave", "Psychedelic", "Rave", "Showtunes", "Trailer", "Lo-Fi",
+     "Tribal", "Acid Punk", "Acid Jazz", "Polka", "Retro", "Musical",
+     "Rock & Roll", "Hard Rock", "Folk", "Folk/Rock", "National Folk", "Swing",
+     "Fast-Fusion", "Bebob", "Latin", "Revival", "Celtic", "Bluegrass", "Avantgarde",
+diff --git a/src/xmms/main.c b/src/xmms/main.c
+index 4a68f16..08a154a 100644
+--- a/src/xmms/main.c
++++ b/src/xmms/main.c
+@@ -210,10 +210,10 @@ change_output (xmms_object_t *object, xmmsv_t *_data, gpointer userdata)
+ 
+ 	plugin = (xmms_output_plugin_t *)xmms_plugin_find (XMMS_PLUGIN_TYPE_OUTPUT, outname);
+ 	if (!plugin) {
+-		xmms_log_error ("Baaaaad output plugin, try to change the output.plugin config variable to something usefull");
++		xmms_log_error ("Baaaaad output plugin, try to change the output.plugin config variable to something useful");
+ 	} else {
+ 		if (!xmms_output_plugin_switch (mainobj->output, plugin)) {
+-			xmms_log_error ("Baaaaad output plugin, try to change the output.plugin config variable to something usefull");
++			xmms_log_error ("Baaaaad output plugin, try to change the output.plugin config variable to something useful");
+ 		}
+ 	}
+ }
+@@ -518,7 +518,7 @@ main (int argc, char **argv)
+ 	o_plugin = (xmms_output_plugin_t *)xmms_plugin_find (XMMS_PLUGIN_TYPE_OUTPUT, outname);
+ 	if (!o_plugin) {
+ 		xmms_log_error ("Baaaaad output plugin, try to change the"
+-		                "output.plugin config variable to something usefull");
++		                "output.plugin config variable to something useful");
+ 	}
+ 
+ 	mainobj->output = xmms_output_new (o_plugin, playlist);
+-- 
+tg: (eadac57..) fixes/spelling-error (depends on: master)

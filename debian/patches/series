@@ -1,0 +1,7 @@
+fixes/cli-output-verbosity.diff -p1
+fixes/detabify.diff -p1
+fixes/escape-minus-signes.diff -p1
+fixes/perl.diff -p1
+fixes/rpath.diff -p1
+fixes/silent-launcher.diff -p1
+fixes/spelling-error.diff -p1
