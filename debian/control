@@ -6,8 +6,8 @@ Uploaders: Jens Taprogge <jlt@taprogge.org>,
            Jonne Lehtinen <jms@modeemi.fi>,
            Anders Waldenborg <anders@0x63.nu>,
            Benjamin Drung <bdrung@ubuntu.com>
-Standards-Version: 3.8.3
-Build-Depends: debhelper (>= 5.0.37.2),
+Standards-Version: 3.8.4
+Build-Depends: debhelper (>= 7.0.50~),
                libao-dev,
                libasound2-dev [!kfreebsd-i386 !kfreebsd-amd64],
                libavahi-client-dev,
@@ -24,6 +24,7 @@ Build-Depends: debhelper (>= 5.0.37.2),
                libflac-dev,
                libgamin-dev,
                libglib2.0-dev,
+               libgme-dev,
                libjack-dev,
                libmad0-dev,
                libmms-dev,
@@ -47,15 +48,13 @@ Build-Depends: debhelper (>= 5.0.37.2),
                libxml2-dev,
                python-all-dev (>= 2.3.5-11),
                python-pyrex,
-               python-support (>= 0.3),
-               quilt,
+               python-support (>= 0.90),
                ruby,
                ruby1.8-dev
 DM-Upload-Allowed: yes
 Vcs-Git: git://git.debian.org/git/pkg-xmms2/xmms2
 Vcs-Browser: http://git.debian.org/?p=pkg-xmms2/xmms2.git
 Homepage: http://xmms2.xmms.se/
-XS-Python-Version: all
 
 Package: xmms2
 Architecture: all
@@ -68,6 +67,7 @@ Depends: xmms2-client-cli,
          xmms2-plugin-oss [kfreebsd-i386 kfreebsd-amd64],
          xmms2-plugin-vorbis,
          ${misc:Depends}
+Recommends: xmms2-client-nycli
 Conflicts: xmms2-plugin-nulstripper
 Replaces: xmms2-plugin-nulstripper
 Description: Client/server based media player system
@@ -140,8 +140,7 @@ Package: xmms2-dev
 Architecture: all
 Section: libdevel
 Depends: pkg-config,
-         ${misc:Depends},
-         ${shlibs:Depends}
+         ${misc:Depends}
 Description: XMMS2 - plug-in development files
  XMMS2 is a redesign of the XMMS music player. It features a client-server
  model, allowing multiple (even simultaneous!) user interfaces, both textual
@@ -183,6 +182,7 @@ Description: XMMS2 - phone home package
 
 Package: xmms2-icon
 Architecture: all
+Depends: ${misc:Depends}
 Conflicts: xmms2-core (<= 0.6DrMattDestruction-1)
 Replaces: xmms2-core (<= 0.6DrMattDestruction-1)
 Description: XMMS2 - icon package
@@ -193,15 +193,17 @@ Description: XMMS2 - icon package
  .
  This package just contains the icon files.
 
-Package: libxmmsclient5
+Package: libxmmsclient6
 Architecture: any
 Section: libs
 Conflicts: libxmmsclient2,
            libxmmsclient3,
-           libxmmsclient4
+           libxmmsclient4,
+           libxmmsclient5
 Replaces: libxmmsclient2,
           libxmmsclient3,
-          libxmmsclient4
+          libxmmsclient4,
+          libxmmsclient5
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Breaks: xmms2-core (<< 0.6DrMattDestruction)
@@ -216,18 +218,17 @@ Description: XMMS2 - client library
 Package: libxmmsclient-dev
 Architecture: any
 Section: libdevel
-Depends: libxmmsclient5 (= ${binary:Version}),
+Depends: libxmmsclient6 (= ${binary:Version}),
          pkg-config,
          xmms2-dev,
-         ${misc:Depends},
-         ${shlibs:Depends}
+         ${misc:Depends}
 Description: XMMS2 - client library development files
  XMMS2 is a redesign of the XMMS music player. It features a client-server
  model, allowing multiple (even simultaneous!) user interfaces, both textual
  and graphical. All common audio formats are supported using plug-ins. On top of
  this, there is a flexible media library to organize your music.
  .
- This package contains files for developing XMMS2 clients using libxmmsclient5.
+ This package contains files for developing XMMS2 clients using libxmmsclient6.
 
 Package: libxmmsclient-glib1
 Architecture: any
@@ -249,8 +250,7 @@ Depends: libglib2.0-dev,
          libxmmsclient-dev,
          libxmmsclient-glib1 (= ${binary:Version}),
          pkg-config,
-         ${misc:Depends},
-         ${shlibs:Depends}
+         ${misc:Depends}
 Description: XMMS2 - glib client library - development files
  XMMS2 is a redesign of the XMMS music player. It features a client-server
  model, allowing multiple (even simultaneous!) user interfaces, both textual
@@ -260,15 +260,17 @@ Description: XMMS2 - glib client library - development files
  This package contains files for developing XMMS2 clients using
  libxmmsclient-glib1.
 
-Package: libxmmsclient++3
+Package: libxmmsclient++4
 Architecture: any
 Section: libs
-Conflicts: libxmmsclient++1,
-           libxmmsclient++2
-Replaces: libxmmsclient++1,
-          libxmmsclient++2,
 Depends: ${misc:Depends},
          ${shlibs:Depends}
+Conflicts: libxmmsclient++1,
+           libxmmsclient++2,
+           libxmmsclient++3
+Replaces: libxmmsclient++1,
+          libxmmsclient++2,
+          libxmmsclient++3
 Breaks: xmms2-core (<< 0.6DrMattDestruction)
 Description: XMMS2 - client library for c++
  XMMS2 is a redesign of the XMMS music player. It features a client-server
@@ -281,12 +283,10 @@ Description: XMMS2 - client library for c++
 Package: libxmmsclient++-dev
 Architecture: any
 Section: libdevel
-Depends: libxmmsclient++3 (= ${binary:Version}),
+Depends: libxmmsclient++4 (= ${binary:Version}),
          libxmmsclient-dev,
          pkg-config,
-         ${boost:Depends},
-         ${misc:Depends},
-         ${shlibs:Depends}
+         ${misc:Depends}
 Description: XMMS2 - client library for c++ - development files
  XMMS2 is a redesign of the XMMS music player. It features a client-server
  model, allowing multiple (even simultaneous!) user interfaces, both textual
@@ -294,7 +294,7 @@ Description: XMMS2 - client library for c++ - development files
  this, there is a flexible media library to organize your music.
  .
  This package contains files for developing XMMS2 clients using
- libxmmsclient++3.
+ libxmmsclient++4.
 
 Package: libxmmsclient++-glib1
 Architecture: any
@@ -316,8 +316,7 @@ Depends: libxmmsclient++-dev,
          libxmmsclient++-glib1 (= ${binary:Version}),
          libxmmsclient-glib-dev,
          pkg-config,
-         ${misc:Depends},
-         ${shlibs:Depends}
+         ${misc:Depends}
 Description: XMMS2 - glib client library for c++ - development files
  XMMS2 is a redesign of the XMMS music player. It features a client-server
  model, allowing multiple (even simultaneous!) user interfaces, both textual
@@ -332,8 +331,7 @@ Architecture: all
 Section: ruby
 Depends: libxmmsclient-ruby1.8,
          ruby,
-         ${misc:Depends},
-         ${shlibs:Depends}
+         ${misc:Depends}
 Description: XMMS2 - Ruby client library
  XMMS2 is a redesign of the XMMS music player. It features a client-server
  model, allowing multiple (even simultaneous!) user interfaces, both textual
@@ -370,7 +368,6 @@ Depends: ${misc:Depends},
          ${python:Depends},
          ${shlibs:Depends}
 Provides: ${python:Provides}
-XB-Python-Version: ${python:Versions}
 Description: XMMS2 - Python bindings
  XMMS2 is a redesign of the XMMS music player. It features a client-server
  model, allowing multiple (even simultaneous!) user interfaces, both textual
@@ -585,8 +582,7 @@ Package: xmms2-plugin-wma
 Architecture: any
 Depends: xmms2-plugin-asf (= ${binary:Version}),
          xmms2-plugin-avcodec (= ${binary:Version}),
-         ${misc:Depends},
-         ${shlibs:Depends}
+         ${misc:Depends}
 Enhances: xmms2-core
 Description: XMMS2 - wma decoder
  XMMS2 is a redesign of the XMMS music player. It features a client-server

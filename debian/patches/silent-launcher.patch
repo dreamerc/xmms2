@@ -1,21 +1,15 @@
-From: Benjamin Drung <bdrung@ubuntu.com>
-Subject: [PATCH] fixes/silent-launcher
+Description: This patch makes xmms2-launcher more smart and silent.
+ All non error output is now turned off unless you run xmms2-launcher with
+ the --verbose switch.
+Bug-Debian: http://bugs.debian.org/510375
+Author: Adam Flott <adam@npjh.com>
+Forwarded: No
 
-This patch makes xmms2-launcher more smart and silent. All non error output
-is now turned off unless you run xmms2-launcher with the --verbose switch.
-
-Signed-off-by: Benjamin Drung <bdrung@ubuntu.com>
-
----
- src/clients/launcher/xmms2-launcher.1 |    8 ++++++++
- src/clients/launcher/xmms2-launcher.c |   14 +++++++++++---
- 2 files changed, 19 insertions(+), 3 deletions(-)
-
-diff --git a/src/clients/launcher/xmms2-launcher.1 b/src/clients/launcher/xmms2-launcher.1
-index b057f51..5a140d7 100644
---- a/src/clients/launcher/xmms2-launcher.1
-+++ b/src/clients/launcher/xmms2-launcher.1
-@@ -51,6 +51,9 @@ logfile]
+Index: debian.git/src/clients/launcher/xmms2-launcher.1
+===================================================================
+--- debian.git.orig/src/clients/launcher/xmms2-launcher.1	2010-02-20 12:50:04.522899969 +0100
++++ debian.git/src/clients/launcher/xmms2-launcher.1	2010-02-20 12:50:11.362899847 +0100
+@@ -51,6 +51,9 @@
  pidfile / 
  .B --pidfile=
  pidfile]
@@ -25,7 +19,7 @@ index b057f51..5a140d7 100644
  .SH DESCRIPTION
  
  .B XMMS2
-@@ -88,6 +91,11 @@ to the file specified by
+@@ -88,6 +91,11 @@
  .I pidfile
  .TP
  .I
@@ -37,11 +31,11 @@ index b057f51..5a140d7 100644
  \-? / \-\-help
  Show help options
  .SH FILES
-diff --git a/src/clients/launcher/xmms2-launcher.c b/src/clients/launcher/xmms2-launcher.c
-index ebe4f47..f1b3bf8 100644
---- a/src/clients/launcher/xmms2-launcher.c
-+++ b/src/clients/launcher/xmms2-launcher.c
-@@ -46,11 +46,13 @@ main (int argc, char **argv)
+Index: debian.git/src/clients/launcher/xmms2-launcher.c
+===================================================================
+--- debian.git.orig/src/clients/launcher/xmms2-launcher.c	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/clients/launcher/xmms2-launcher.c	2010-02-20 12:50:11.362899847 +0100
+@@ -46,11 +46,13 @@
  	int pipefd[2];
  	const gchar *logfile = NULL;
  	const gchar *pidfile = NULL;
@@ -55,7 +49,7 @@ index ebe4f47..f1b3bf8 100644
  		{NULL}
  	};
  
-@@ -76,7 +78,9 @@ main (int argc, char **argv)
+@@ -76,7 +78,9 @@
  			g_mkdir_with_parents (cache, 0755);
  		}
  	}
@@ -66,7 +60,7 @@ index ebe4f47..f1b3bf8 100644
  
  	pid = fork ();
  	if (pid) {
-@@ -92,10 +96,14 @@ main (int argc, char **argv)
+@@ -92,10 +96,14 @@
  		if (res == -1)
  			perror ("read");
  		if (res == 0) {
@@ -83,5 +77,3 @@ index ebe4f47..f1b3bf8 100644
  		exit(0);
  	}
  
--- 
-tg: (803510c..) fixes/silent-launcher (depends on: master fixes/escape-minus-signes)

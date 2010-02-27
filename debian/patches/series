@@ -1,7 +1,9 @@
-fixes/cli-output-verbosity.diff -p1
-fixes/detabify.diff -p1
-fixes/escape-minus-signes.diff -p1
-fixes/perl.diff -p1
-fixes/rpath.diff -p1
-fixes/silent-launcher.diff -p1
-fixes/spelling-error.diff -p1
+cli-output-verbosity.patch
+escape-minus-signes.patch
+rpath.patch
+silent-launcher.patch
+spelling-error.patch
+fix-typo-in-xmms2-mdns-avahi-manpage.patch
+vorbis-picture-support.patch
+linker-flags.patch
+fix-cast-error.patch

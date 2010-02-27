@@ -1,0 +1,43 @@
+Description: Correct spelling error found by Lintian.
+Author: Benjamin Drung <bdrung@ubuntu.com>
+Forwarded: No
+
+Index: debian.git/src/plugins/mp4/mp4ff/mp4meta.c
+===================================================================
+--- debian.git.orig/src/plugins/mp4/mp4ff/mp4meta.c	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/plugins/mp4/mp4ff/mp4meta.c	2010-02-20 12:53:23.254149836 +0100
+@@ -123,7 +123,7 @@
+     "Ethnic", "Gothic", "Darkwave", "Techno-Industrial", "Electronic", "Pop-Folk",
+     "Eurodance", "Dream", "Southern Rock", "Comedy", "Cult", "Gangsta",
+     "Top 40", "Christian Rap", "Pop/Funk", "Jungle", "Native American", "Cabaret",
+-    "New Wave", "Psychadelic", "Rave", "Showtunes", "Trailer", "Lo-Fi",
++    "New Wave", "Psychedelic", "Rave", "Showtunes", "Trailer", "Lo-Fi",
+     "Tribal", "Acid Punk", "Acid Jazz", "Polka", "Retro", "Musical",
+     "Rock & Roll", "Hard Rock", "Folk", "Folk/Rock", "National Folk", "Swing",
+     "Fast-Fusion", "Bebob", "Latin", "Revival", "Celtic", "Bluegrass", "Avantgarde",
+Index: debian.git/src/xmms/main.c
+===================================================================
+--- debian.git.orig/src/xmms/main.c	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/xmms/main.c	2010-02-20 12:53:23.254149836 +0100
+@@ -254,10 +254,10 @@
+ 
+ 	plugin = (xmms_output_plugin_t *)xmms_plugin_find (XMMS_PLUGIN_TYPE_OUTPUT, outname);
+ 	if (!plugin) {
+-		xmms_log_error ("Baaaaad output plugin, try to change the output.plugin config variable to something usefull");
++		xmms_log_error ("Baaaaad output plugin, try to change the output.plugin config variable to something useful");
+ 	} else {
+ 		if (!xmms_output_plugin_switch (mainobj->output, plugin)) {
+-			xmms_log_error ("Baaaaad output plugin, try to change the output.plugin config variable to something usefull");
++			xmms_log_error ("Baaaaad output plugin, try to change the output.plugin config variable to something useful");
+ 		}
+ 	}
+ }
+@@ -564,7 +564,7 @@
+ 	o_plugin = (xmms_output_plugin_t *)xmms_plugin_find (XMMS_PLUGIN_TYPE_OUTPUT, outname);
+ 	if (!o_plugin) {
+ 		xmms_log_error ("Baaaaad output plugin, try to change the"
+-		                "output.plugin config variable to something usefull");
++		                "output.plugin config variable to something useful");
+ 	}
+ 
+ 	mainobj->output = xmms_output_new (o_plugin, playlist);

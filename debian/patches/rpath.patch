@@ -1,19 +1,12 @@
-From: Benjamin Drung <bdrung@ubuntu.com>
-Subject: [PATCH] fixes/rpath
+Description: Fix binary-or-shlib-defines-rpath Lintian warning.
+Author: Benjamin Drung <bdrung@ubuntu.com>
+Forwarded: No
 
-Fix binary-or-shlib-defines-rpath Lintian warning.
-
-Signed-off-by: Benjamin Drung <bdrung@ubuntu.com>
-
----
- src/plugins/sid/wscript |    7 -------
- 1 files changed, 0 insertions(+), 7 deletions(-)
-
-diff --git a/src/plugins/sid/wscript b/src/plugins/sid/wscript
-index 1dab9ca..44e404f 100644
---- a/src/plugins/sid/wscript
-+++ b/src/plugins/sid/wscript
-@@ -14,13 +14,6 @@ def plugin_configure(conf):
+Index: debian.git/src/plugins/sid/wscript
+===================================================================
+--- debian.git.orig/src/plugins/sid/wscript	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/plugins/sid/wscript	2010-02-20 12:50:08.312900440 +0100
+@@ -14,13 +14,6 @@
      # extract what's inside builders pkg-config variable
      builders = conf.check_cfg(package="libsidplay2", args="--variable=builders").strip()
  
@@ -27,5 +20,3 @@ index 1dab9ca..44e404f 100644
      if not conf.check_cxx(lib="resid-builder", header_name="sidplay/builders/resid.h", uselib_store="resid", uselib="resid"):
          return False
  
--- 
-tg: (5af4df9..) fixes/rpath (depends on: master)

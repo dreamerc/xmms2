@@ -1,0 +1,15 @@
+Description: Fix cast to pointer from integer of different size error
+Author: Benjamin Drung <bdrung@ubuntu.com>
+Bug-Debian: http://bugs.debian.org/571539
+
+--- xmms2-0.7DrNo.orig/src/clients/medialib-updater/main.c
++++ xmms2-0.7DrNo/src/clients/medialib-updater/main.c
+@@ -457,6 +457,8 @@ updater_remove_directory_by_id (xmmsv_t 
+ 	return TRUE;
+ }
+ 
++char *_xmmsc_medialib_encode_url (const char *url, xmmsv_t *args);
++
+ static void
+ updater_remove_directory (updater_t *updater, GFile *file)
+ {

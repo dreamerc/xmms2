@@ -1,0 +1,84 @@
+Description: respects now the common Unix convention for output verbosity
+ Common unix convention for CLI programs is being silent for successful
+ operations, and being verbose on errors. This patch adjust the output verbosity
+ to match the unix conventions.
+Bug-Debian: http://bugs.debian.org/510374
+Author: Jan Braun <janbraun@gmx.net>
+Forwarded: No
+
+Index: debian.git/src/clients/cli/cmd_pls.c
+===================================================================
+--- debian.git.orig/src/clients/cli/cmd_pls.c	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/clients/cli/cmd_pls.c	2010-02-20 12:49:57.302899620 +0100
+@@ -39,7 +39,7 @@
+ 
+ 	url = format_url (item, G_FILE_TEST_IS_REGULAR);
+ 	if (!url) {
+-		print_error ("Invalid url");
++		print_error ("Invalid url: %s", item);
+ 	}
+ 
+ 	res = xmmsc_playlist_add_url (conn, playlist, url);
+@@ -52,7 +52,9 @@
+ 	}
+ 	xmmsc_result_unref (res);
+ 
+-	print_info ("Added %s", item);
++	if (verbose) {
++        print_info ("Added %s", item);
++    }
+ }
+ 
+ 
+@@ -259,7 +261,7 @@
+ 	if (!url) {
+ 		url = format_url (argv[3], G_FILE_TEST_IS_REGULAR);
+ 		if (!url) {
+-			print_error ("Invalid url");
++			print_error ("Invalid url: %s", argv[3]);
+ 		} else {
+ 			/* FIXME: Fulhack to check for optional playlist argument */
+ 			playlist = argv[2];
+@@ -307,7 +309,7 @@
+ 	}
+ 
+ 	if (!url) {
+-		print_error ("Invalid url");
++		print_error ("Invalid url: %s", (*endptr == '\0') ? argv[3] : argv[4] );
+ 	}
+ 
+ 	res = xmmsc_playlist_insert_url (conn, playlist, pos, url);
+Index: debian.git/src/clients/cli/common.h
+===================================================================
+--- debian.git.orig/src/clients/cli/common.h	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/clients/cli/common.h	2010-02-20 12:49:57.302899620 +0100
+@@ -31,6 +31,8 @@
+ 	void (*func) (xmmsc_connection_t *conn, int argc, char **argv);
+ } cmds;
+ 
++gboolean verbose;
++
+ gboolean x_realpath (const gchar *item, gchar *rpath);
+ gchar *x_path2url (gchar *path);
+ gchar *format_url (gchar *item, GFileTest test);
+Index: debian.git/src/clients/cli/main.c
+===================================================================
+--- debian.git.orig/src/clients/cli/main.c	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/clients/cli/main.c	2010-02-20 12:49:57.302899620 +0100
+@@ -254,6 +254,16 @@
+ 
+ 	setlocale (LC_ALL, "");
+ 
++    verbose = FALSE;
++    while ( argc >1 && ( !g_ascii_strcasecmp (argv[1], "-v") ||
++                    !g_ascii_strcasecmp (argv[1], "--verbose") )
++    ) {
++        verbose = TRUE;
++        argv[1] = argv[0];
++        --argc;
++        ++argv;
++    }
++
+ 	config = read_config ();
+ 	atexit (free_config);
+ 

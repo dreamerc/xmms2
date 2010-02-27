@@ -1,20 +1,12 @@
-From: Benjamin Drung <bdrung@ubuntu.com>
-Subject: [PATCH] fixes/escape-minus-signes
+Description: Escape minus signes in man pages.
+Author: Benjamin Drung <bdrung@ubuntu.com>
+Bug: http://bugs.xmms2.xmms.se/view.php?id=2225
 
-Escape minus signes in man pages.
-
-Signed-off-by: Benjamin Drung <bdrung@ubuntu.com>
-
----
- src/clients/launcher/xmms2-launcher.1 |    6 ++--
- src/clients/nycli/nyxmms2.1           |   54 ++++++++++++++++----------------
- 2 files changed, 30 insertions(+), 30 deletions(-)
-
-diff --git a/src/clients/launcher/xmms2-launcher.1 b/src/clients/launcher/xmms2-launcher.1
-index 86efce8..b057f51 100644
---- a/src/clients/launcher/xmms2-launcher.1
-+++ b/src/clients/launcher/xmms2-launcher.1
-@@ -75,20 +75,20 @@ includes command line options to change the way in which the daemon is invoked.
+Index: debian.git/src/clients/launcher/xmms2-launcher.1
+===================================================================
+--- debian.git.orig/src/clients/launcher/xmms2-launcher.1	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/clients/launcher/xmms2-launcher.1	2010-02-20 12:50:04.522899969 +0100
+@@ -75,20 +75,20 @@
  These options are currently recognised:
  .TP
  .I
@@ -38,11 +30,11 @@ index 86efce8..b057f51 100644
  Show help options
  .SH FILES
  .TP
-diff --git a/src/clients/nycli/nyxmms2.1 b/src/clients/nycli/nyxmms2.1
-index 5c300f6..4f803ba 100644
---- a/src/clients/nycli/nyxmms2.1
-+++ b/src/clients/nycli/nyxmms2.1
-@@ -80,7 +80,7 @@ Display command help.
+Index: debian.git/src/clients/nycli/nyxmms2.1
+===================================================================
+--- debian.git.orig/src/clients/nycli/nyxmms2.1	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/clients/nycli/nyxmms2.1	2010-02-20 12:50:04.522899969 +0100
+@@ -80,7 +80,7 @@
  .PP
  
  .TP
@@ -51,7 +43,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Stop playback.
-@@ -139,7 +139,7 @@ Display command help.
+@@ -139,7 +139,7 @@
  .PP
  
  .TP
@@ -60,7 +52,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Display playback status, either continuously or once.
-@@ -198,7 +198,7 @@ Display command help.
+@@ -198,7 +198,7 @@
  .PP
  
  .TP
@@ -69,7 +61,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Jump to the first media maching the pattern.
-@@ -235,7 +235,7 @@ Display command help.
+@@ -235,7 +235,7 @@
  .PP
  
  .TP
@@ -78,7 +70,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Search and print all media matching the pattern. Search can be restricted
-@@ -279,7 +279,7 @@ Display command help.
+@@ -279,7 +279,7 @@
  .PP
  
  .TP
@@ -87,7 +79,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  List the contents of a playlist (the active playlist by default). If a
-@@ -303,7 +303,7 @@ Display command help.
+@@ -303,7 +303,7 @@
  .PP
  
  .TP
@@ -96,7 +88,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Add the matching media or files to a playlist.
-@@ -320,7 +320,7 @@ Treat the arguments as file paths instead of a pattern.
+@@ -320,7 +320,7 @@
  \-P | \-\-pls
  .RE
  .RS 8
@@ -105,7 +97,7 @@ index 5c300f6..4f803ba 100644
  .RE
  .PP
  .RS 4
-@@ -367,7 +367,7 @@ Display command help.
+@@ -367,7 +367,7 @@
  .PP
  
  .TP
@@ -114,7 +106,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Remove the matching media from a playlist.
-@@ -389,7 +389,7 @@ Display command help.
+@@ -389,7 +389,7 @@
  .PP
  
  .TP
@@ -123,7 +115,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Move entries inside a playlist.
-@@ -440,7 +440,7 @@ Display command help.
+@@ -440,7 +440,7 @@
  .PP
  
  .TP
@@ -132,7 +124,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  List all commands, or help on one command.
-@@ -462,7 +462,7 @@ Display command help.
+@@ -462,7 +462,7 @@
  .PP
  .SH PLAYLIST COMMANDS
  .TP
@@ -141,7 +133,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  List all playlists.
-@@ -514,7 +514,7 @@ Display command help.
+@@ -514,7 +514,7 @@
  .PP
  
  .TP
@@ -150,7 +142,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Change the active playlist.
-@@ -536,7 +536,7 @@ Display command help.
+@@ -536,7 +536,7 @@
  .PP
  
  .TP
@@ -159,7 +151,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Rename a playlist.  By default, rename the active playlist.
-@@ -610,7 +610,7 @@ Display command help.
+@@ -610,7 +610,7 @@
  .PP
  
  .TP
@@ -168,7 +160,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Sort a playlist.  By default, sort the active playlist.
-@@ -632,7 +632,7 @@ Display command help.
+@@ -632,7 +632,7 @@
  .PP
  
  .TP
@@ -177,7 +169,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Configure a playlist by changing its type, attributes, etc.
-@@ -721,7 +721,7 @@ Display command help.
+@@ -721,7 +721,7 @@
  .PP
  
  .TP
@@ -186,7 +178,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Create a new collection.
-@@ -759,7 +759,7 @@ Display command help.
+@@ -759,7 +759,7 @@
  .PP
  
  .TP
@@ -195,7 +187,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Rename a collection.
-@@ -814,7 +814,7 @@ Display command help.
+@@ -814,7 +814,7 @@
  .PP
  .SH SERVER COMMANDS
  .TP
@@ -204,7 +196,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Import new files into the media library.
-@@ -901,7 +901,7 @@ Display command help.
+@@ -901,7 +901,7 @@
  .PP
  
  .TP
@@ -213,7 +205,7 @@ index 5c300f6..4f803ba 100644
  .PP
  .RS 4
  Get or set properties for a given media.
-@@ -910,10 +910,10 @@ If only a name is provided, display the value of the property.
+@@ -910,10 +910,10 @@
  If both a name and a value are provided, set the new value of the property.
  
  By default, set operations use client specific source and list, display operations use source-preference.
@@ -226,7 +218,7 @@ index 5c300f6..4f803ba 100644
  .RE
  .PP
  .RS 4
-@@ -968,12 +968,12 @@ Display command help.
+@@ -968,12 +968,12 @@
  .PP
  
  .TP
@@ -241,7 +233,7 @@ index 5c300f6..4f803ba 100644
  .RE
  .PP
  .RS 4
-@@ -1053,7 +1053,7 @@ The default configuration includes the following aliases:
+@@ -1053,7 +1053,7 @@
  \fBaddpls\fR 
  .PP
  .RS 4
@@ -250,7 +242,7 @@ index 5c300f6..4f803ba 100644
  .RE
  .PP
  .RS 4
-@@ -1068,7 +1068,7 @@ Display command help.
+@@ -1068,7 +1068,7 @@
  \fBcurrent\fR 
  .PP
  .RS 4
@@ -259,7 +251,7 @@ index 5c300f6..4f803ba 100644
  .RE
  .PP
  .RS 4
-@@ -1189,13 +1189,13 @@ Display command help.
+@@ -1189,13 +1189,13 @@
  .RS 8
  An alias can use positional parameters, for example:
  .PP
@@ -275,5 +267,3 @@ index 5c300f6..4f803ba 100644
  .PP
  .RE
  .RS 4
--- 
-tg: (710fa30..) fixes/escape-minus-signes (depends on: master)

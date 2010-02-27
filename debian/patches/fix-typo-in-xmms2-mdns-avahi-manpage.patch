@@ -1,0 +1,17 @@
+Description: Fix spelling mistake in xmms2-mdns-avahi manpage
+Author: Benjamin Drung <bdrung@ubuntu.com>
+Forwarded: No
+
+Index: debian.git/src/clients/mdns/avahi/xmms2-mdns-avahi.1
+===================================================================
+--- debian.git.orig/src/clients/mdns/avahi/xmms2-mdns-avahi.1	2010-02-19 18:43:54.000000000 +0100
++++ debian.git/src/clients/mdns/avahi/xmms2-mdns-avahi.1	2010-02-20 12:53:26.524149450 +0100
+@@ -56,7 +56,7 @@
+ .SH ENVIRONMENTAL VARIABLES
+ .TP
+ .I XMMS_PATH_FULL
+-A complete list of URL paths seperated by ';' pointed to the
++A complete list of URL paths separated by ';' pointed to the
+ .I xmms2d(1).
+ See
+ .B IPC SOCKET

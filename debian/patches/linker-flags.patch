@@ -1,0 +1,15 @@
+Description: Do not link against unused libraries
+Author: Benjamin Drung <bdrung@ubuntu.com>
+
+--- xmms2-0.7DrNo.orig/wscript
++++ xmms2-0.7DrNo/wscript
+@@ -420,6 +420,9 @@ def configure(conf):
+                     enabled_optionals, disabled_optionals,
+                     output_plugins)
+ 
++    # Do not link against unused libraries (make dpkg-shlibdeps happy).
++    conf.env.LINKFLAGS += ['-Wl,--as-needed']
++
+     return True
+ 
+ 
