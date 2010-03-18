@@ -25,20 +25,21 @@ def build(bld):
         xform.cpp
     """.split()
     obj.uselib_local = 'xmmsclient'
-    obj.uselib = 'BOOST socket'
-    obj.vnum = '4.0.0'
+    obj.uselib = 'BOOST BOOST_SIGNALS socket'
+    obj.vnum = '3.0.0'
     tool.add_install_flag(bld, obj)
 
 def configure(conf):
     if not conf.env["CXX"]:
-        conf.fatal("No C++ compiler installed")
+        return False
 
     conf.check_tool('boost')
-
-    if not conf.check_boost():
-        conf.fatal('Could not find boost library')
+    if not conf.check_boost(lib='signals', kind='STATIC_BOTH'):
+        return False
 
     conf.env.append_value('XMMS_PKGCONF_FILES', ('xmms2-client-cpp', '-lxmmsclient -lxmmsclient++'))
+
+    return True
 
 def set_options(opt):
     opt.tool_options('boost')

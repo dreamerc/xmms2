@@ -33,57 +33,14 @@
 
 static void loop_select (cli_infos_t *infos);
 
+
 void
-command_run (cli_infos_t *infos, gchar *input)
-{
-	while (input && *input == ' ') ++input;
-
-	if (input == NULL) {
-		if (infos->status != CLI_ACTION_STATUS_ALIAS) {
-			/* End of stream, quit */
-			cli_infos_loop_stop (infos);
-			g_printf ("\n");
-		}
-	} else if (*input != 0) {
-		gint argc;
-		gchar **argv, *listop;
-		GError *error = NULL;
-
-		if ((listop = strchr (input, ';'))) {
-			*listop++ = '\0';
-		}
-
-		if (g_shell_parse_argv (input, &argc, &argv, &error)) {
-			if (infos->status != CLI_ACTION_STATUS_ALIAS) {
-				add_history (input);
-			}
-			command_dispatch (infos, argc, argv);
-			g_strfreev (argv);
-			if (listop && *listop) {
-				g_printf ("\n");
-				command_run (infos, listop);
-			}
-		} else {
-			if (g_error_matches (error, G_SHELL_ERROR,
-			                     G_SHELL_ERROR_BAD_QUOTING)) {
-				g_printf (_("Error: Mismatched quote\n"));
-			} else if (g_error_matches (error, G_SHELL_ERROR,
-			                            G_SHELL_ERROR_FAILED)) {
-				g_printf (_("Error: Invalid input\n"));
-			}
-			g_error_free (error);
-			/* FIXME: Handle errors */
-		}
-	}
-}
-
-static void
 command_argument_free (void *x)
 {
 	g_free (x);
 }
 
-static command_context_t *
+command_context_t *
 command_context_init (gint argc, gchar **argv)
 {
 	command_context_t *ctx;
@@ -98,7 +55,7 @@ command_context_init (gint argc, gchar **argv)
 	return ctx;
 }
 
-static void
+void
 command_context_free (command_context_t *ctx)
 {
 	g_hash_table_destroy (ctx->flags);
@@ -107,7 +64,7 @@ command_context_free (command_context_t *ctx)
 }
 
 
-static gboolean
+gboolean
 command_runnable (cli_infos_t *infos, command_action_t *action)
 {
 	gint n = 0;
@@ -203,7 +160,7 @@ init_context_from_args (argument_t *argdefs, gint argc, gchar **argv)
  * mode, not shell mode) argv/argc.  If appropriate, it enters
  * flag_dispatch to parse program flags.
  */
-static void
+void
 command_or_flag_dispatch (cli_infos_t *infos, gint in_argc, gchar **in_argv)
 {
 	/* First argument looks like a flag */
@@ -284,7 +241,7 @@ command_dispatch (cli_infos_t *infos, gint in_argc, gchar **in_argv)
 	auto_complete = configuration_get_boolean (infos->config,
 	                                           "AUTO_UNIQUE_COMPLETE");
 	match = command_trie_find (infos->commands, &argv, &argc,
-	                           auto_complete, &action, NULL);
+	                            auto_complete, &action);
 
 	if (match == COMMAND_TRIE_MATCH_ACTION) {
 
@@ -401,7 +358,7 @@ loop_select (cli_infos_t *infos)
 	}
 }
 
-static void
+void
 loop_once (cli_infos_t *infos, gint argc, gchar **argv)
 {
 	command_or_flag_dispatch (infos, argc, argv);
@@ -412,7 +369,7 @@ loop_once (cli_infos_t *infos, gint argc, gchar **argv)
 	}
 }
 
-static void
+void
 loop_run (cli_infos_t *infos)
 {
 	while (infos->status != CLI_ACTION_STATUS_FINISH) {
@@ -434,9 +391,7 @@ main (gint argc, gchar **argv)
 		if (cli_infos->mode == CLI_EXECUTION_MODE_INLINE) {
 			loop_once (cli_infos, argc - 1, argv + 1);
 		} else {
-			read_history (cli_infos->config->histpath);
 			loop_run (cli_infos);
-			write_history (cli_infos->config->histpath);
 		}
 	}
 

@@ -42,32 +42,25 @@
 #include "xmms/magic.h"
 */
 static void xmms_playlist_destroy (xmms_object_t *object);
-static void xmms_playlist_client_shuffle (xmms_playlist_t *playlist, const gchar *plname, xmms_error_t *err);
-static void xmms_playlist_client_clear (xmms_playlist_t *playlist, const gchar *plname, xmms_error_t *err);
-static void xmms_playlist_client_sort (xmms_playlist_t *playlist, const gchar *plname, xmmsv_t *property, xmms_error_t *err);
-static GList * xmms_playlist_client_list_entries (xmms_playlist_t *playlist, const gchar *plname, xmms_error_t *err);
-static gchar *xmms_playlist_client_current_active (xmms_playlist_t *playlist, xmms_error_t *err);
+static void xmms_playlist_shuffle (xmms_playlist_t *playlist, const gchar *plname, xmms_error_t *err);
+static void xmms_playlist_clear (xmms_playlist_t *playlist, const gchar *plname, xmms_error_t *err);
+static void xmms_playlist_sort (xmms_playlist_t *playlist, const gchar *plname, xmmsv_t *property, xmms_error_t *err);
+static GList * xmms_playlist_list_entries (xmms_playlist_t *playlist, const gchar *plname, xmms_error_t *err);
+static gchar *xmms_playlist_current_active (xmms_playlist_t *playlist, xmms_error_t *err);
 static void xmms_playlist_destroy (xmms_object_t *object);
-
-static void xmms_playlist_client_add_id (xmms_playlist_t *playlist, const gchar *plname, xmms_medialib_entry_t file, xmms_error_t *error);
-static void xmms_playlist_client_add_url (xmms_playlist_t *playlist, const gchar *plname, const gchar *nurl, xmms_error_t *err);
-static void xmms_playlist_client_add_idlist (xmms_playlist_t *playlist, const gchar *plname, xmmsv_coll_t *coll, xmms_error_t *err);
-static void xmms_playlist_client_add_collection (xmms_playlist_t *playlist, const gchar *plname, xmmsv_coll_t *coll, xmmsv_t *order, xmms_error_t *err);
-static GTree * xmms_playlist_client_current_pos (xmms_playlist_t *playlist, const gchar *plname, xmms_error_t *err);
-static gint xmms_playlist_client_set_next (xmms_playlist_t *playlist, gint32 pos, xmms_error_t *error);
-static void xmms_playlist_client_remove_entry (xmms_playlist_t *playlist, const gchar *plname, gint32 pos, xmms_error_t *err);
+gboolean xmms_playlist_remove (xmms_playlist_t *playlist, const gchar *plname, guint pos, xmms_error_t *err);
 static gboolean xmms_playlist_remove_unlocked (xmms_playlist_t *playlist, const gchar *plname, xmmsv_coll_t *plcoll, guint pos, xmms_error_t *err);
-static void xmms_playlist_client_move_entry (xmms_playlist_t *playlist, const gchar *plname, gint32 pos, gint32 newpos, xmms_error_t *err);
-static gint xmms_playlist_client_set_next_rel (xmms_playlist_t *playlist, gint32 pos, xmms_error_t *error);
+static gboolean xmms_playlist_move (xmms_playlist_t *playlist, const gchar *plname, guint pos, guint newpos, xmms_error_t *err);
+static gint xmms_playlist_set_current_position_rel (xmms_playlist_t *playlist, gint32 pos, xmms_error_t *error);
 static gint xmms_playlist_set_current_position_do (xmms_playlist_t *playlist, guint32 pos, xmms_error_t *err);
 
-static void xmms_playlist_client_insert_url (xmms_playlist_t *playlist, const gchar *plname, gint32 pos, const gchar *url, xmms_error_t *error);
-static void xmms_playlist_client_insert_id (xmms_playlist_t *playlist, const gchar *plname, gint32 pos, xmms_medialib_entry_t file, xmms_error_t *error);
-static void xmms_playlist_client_insert_collection (xmms_playlist_t *playlist, const gchar *plname, gint32 pos, xmmsv_coll_t *coll, xmmsv_t *order, xmms_error_t *error);
-static void xmms_playlist_client_radd (xmms_playlist_t *playlist, const gchar *plname, const gchar *path, xmms_error_t *error);
-static void xmms_playlist_client_rinsert (xmms_playlist_t *playlist, const gchar *plname, gint32 pos, const gchar *path, xmms_error_t *error);
+static gboolean xmms_playlist_insert_url (xmms_playlist_t *playlist, const gchar *plname, guint32 pos, const gchar *url, xmms_error_t *error);
+static gboolean xmms_playlist_insert_id (xmms_playlist_t *playlist, const gchar *plname, guint32 pos, xmms_medialib_entry_t file, xmms_error_t *error);
+static gboolean xmms_playlist_insert_collection (xmms_playlist_t *playlist, const gchar *plname, guint32 pos, xmmsv_coll_t *coll, xmmsv_t *order, xmms_error_t *error);
+static void xmms_playlist_radd (xmms_playlist_t *playlist, const gchar *plname, const gchar *path, xmms_error_t *error);
+static void xmms_playlist_rinsert (xmms_playlist_t *playlist, const gchar *plname, guint32 pos, const gchar *path, xmms_error_t *error);
 
-static void xmms_playlist_client_load (xmms_playlist_t *, const gchar *, xmms_error_t *);
+static void xmms_playlist_load (xmms_playlist_t *, const gchar *, xmms_error_t *);
 
 static xmmsv_coll_t *xmms_playlist_get_coll (xmms_playlist_t *playlist, const gchar *plname, xmms_error_t *error);
 static const gchar *xmms_playlist_canonical_name (xmms_playlist_t *playlist, const gchar *plname);
@@ -76,10 +69,30 @@ static gint xmms_playlist_coll_get_size (xmmsv_coll_t *plcoll);
 
 static void xmms_playlist_update_queue (xmms_playlist_t *playlist, const gchar *plname, xmmsv_coll_t *coll);
 static void xmms_playlist_update_partyshuffle (xmms_playlist_t *playlist, const gchar *plname, xmmsv_coll_t *coll);
-static void xmms_playlist_register_ipc_commands (xmms_object_t *playlist_object);
 
 static void xmms_playlist_current_pos_msg_send (xmms_playlist_t *playlist, GTree *dict);
 static GTree * xmms_playlist_current_pos_msg_new (xmms_playlist_t *playlist, guint32 pos, const gchar *plname);
+
+XMMS_CMD_DEFINE  (load, xmms_playlist_load, xmms_playlist_t *, NONE, STRING, NONE);
+XMMS_CMD_DEFINE3 (insert_url, xmms_playlist_insert_url, xmms_playlist_t *, NONE, STRING, INT32, STRING);
+XMMS_CMD_DEFINE3 (insert_id, xmms_playlist_insert_id, xmms_playlist_t *, NONE, STRING, INT32, INT32);
+XMMS_CMD_DEFINE4 (insert_coll, xmms_playlist_insert_collection, xmms_playlist_t *, NONE, STRING, INT32, COLL, LIST);
+XMMS_CMD_DEFINE  (shuffle, xmms_playlist_shuffle, xmms_playlist_t *, NONE, STRING, NONE);
+XMMS_CMD_DEFINE  (remove, xmms_playlist_remove, xmms_playlist_t *, NONE, STRING, INT32);
+XMMS_CMD_DEFINE3 (move, xmms_playlist_move, xmms_playlist_t *, NONE, STRING, INT32, INT32);
+XMMS_CMD_DEFINE  (add_url, xmms_playlist_add_url, xmms_playlist_t *, NONE, STRING, STRING);
+XMMS_CMD_DEFINE  (add_id, xmms_playlist_add_id, xmms_playlist_t *, NONE, STRING, INT32);
+XMMS_CMD_DEFINE  (add_idlist, xmms_playlist_add_idlist, xmms_playlist_t *, NONE, STRING, COLL);
+XMMS_CMD_DEFINE3 (add_coll, xmms_playlist_add_collection, xmms_playlist_t *, NONE, STRING, COLL, LIST);
+XMMS_CMD_DEFINE  (clear, xmms_playlist_clear, xmms_playlist_t *, NONE, STRING, NONE);
+XMMS_CMD_DEFINE  (sort, xmms_playlist_sort, xmms_playlist_t *, NONE, STRING, LIST);
+XMMS_CMD_DEFINE  (list_entries, xmms_playlist_list_entries, xmms_playlist_t *, LIST, STRING, NONE);
+XMMS_CMD_DEFINE  (current_pos, xmms_playlist_current_pos, xmms_playlist_t *, DICT, STRING, NONE);
+XMMS_CMD_DEFINE  (current_active, xmms_playlist_current_active, xmms_playlist_t *, STRING, NONE, NONE);
+XMMS_CMD_DEFINE  (set_pos, xmms_playlist_set_current_position, xmms_playlist_t *, INT32, INT32, NONE);
+XMMS_CMD_DEFINE  (set_pos_rel, xmms_playlist_set_current_position_rel, xmms_playlist_t *, INT32, INT32, NONE);
+XMMS_CMD_DEFINE  (radd, xmms_playlist_radd, xmms_playlist_t *, NONE, STRING, STRING);
+XMMS_CMD_DEFINE3 (rinsert, xmms_playlist_rinsert, xmms_playlist_t *, NONE, STRING, INT32, STRING);
 
 #define XMMS_PLAYLIST_CHANGED_MSG(type, id, name) xmms_playlist_changed_msg_send (playlist, xmms_playlist_changed_msg_new (playlist, type, id, name))
 #define XMMS_PLAYLIST_CURRPOS_MSG(pos, name) xmms_playlist_current_pos_msg_send (playlist, xmms_playlist_current_pos_msg_new (playlist, pos, name))
@@ -112,7 +125,6 @@ struct xmms_playlist_St {
 	xmms_medialib_t *medialib;
 };
 
-#include "playlist_ipc.c"
 
 static void
 on_playlist_r_all_changed (xmms_object_t *object, xmmsv_t *_data,
@@ -228,7 +240,6 @@ xmms_playlist_update_partyshuffle (xmms_playlist_t *playlist,
 {
 	gint history, upcoming, currpos, size;
 	xmmsv_coll_t *src;
-	xmmsv_t *tmp;
 
 	XMMS_DBG ("PLAYLIST: update-partyshuffle!");
 
@@ -247,11 +258,13 @@ xmms_playlist_update_partyshuffle (xmms_playlist_t *playlist,
 		currpos = xmms_playlist_coll_get_currpos (coll);
 	}
 
-	if (!xmmsv_list_get (xmmsv_coll_operands_get (coll), 0, &tmp)) {
+	xmmsv_coll_operand_list_save (coll);
+	xmmsv_coll_operand_list_first (coll);
+	if (!xmmsv_coll_operand_list_entry (coll, &src)) {
 		XMMS_DBG ("Cannot find party shuffle operand!");
 		return;
 	}
-	xmmsv_get_coll (tmp, &src);
+	xmmsv_coll_operand_list_restore (coll);
 
 	currpos = xmms_playlist_coll_get_currpos (coll);
 	size = xmms_playlist_coll_get_size (coll);
@@ -270,6 +283,7 @@ xmms_playlist_update_partyshuffle (xmms_playlist_t *playlist,
 	playlist->update_flag = FALSE;
 }
 
+
 /**
  * Initializes a new xmms_playlist_t.
  */
@@ -282,7 +296,14 @@ xmms_playlist_init (void)
 	ret = xmms_object_new (xmms_playlist_t, xmms_playlist_destroy);
 	ret->mutex = g_mutex_new ();
 
-	xmms_playlist_register_ipc_commands (XMMS_OBJECT (ret));
+	xmms_ipc_object_register (XMMS_IPC_OBJECT_PLAYLIST, XMMS_OBJECT (ret));
+
+	xmms_ipc_broadcast_register (XMMS_OBJECT (ret),
+	                             XMMS_IPC_SIGNAL_PLAYLIST_CHANGED);
+	xmms_ipc_broadcast_register (XMMS_OBJECT (ret),
+	                             XMMS_IPC_SIGNAL_PLAYLIST_CURRENT_POS);
+	xmms_ipc_broadcast_register (XMMS_OBJECT (ret),
+	                             XMMS_IPC_SIGNAL_PLAYLIST_LOADED);
 
 	val = xmms_config_property_register ("playlist.repeat_one", "0",
 	                                     on_playlist_r_one_changed, ret);
@@ -303,9 +324,89 @@ xmms_playlist_init (void)
 	                     on_playlist_updated_pos, ret);
 
 
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_CURRENT_POS,
+	                     XMMS_CMD_FUNC (current_pos));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_CURRENT_ACTIVE,
+	                     XMMS_CMD_FUNC (current_active));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_LOAD,
+	                     XMMS_CMD_FUNC (load));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_SHUFFLE,
+	                     XMMS_CMD_FUNC (shuffle));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_SET_POS,
+	                     XMMS_CMD_FUNC (set_pos));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_SET_POS_REL,
+	                     XMMS_CMD_FUNC (set_pos_rel));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_ADD_URL,
+	                     XMMS_CMD_FUNC (add_url));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_ADD_ID,
+	                     XMMS_CMD_FUNC (add_id));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_ADD_IDLIST,
+	                     XMMS_CMD_FUNC (add_idlist));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_ADD_COLL,
+	                     XMMS_CMD_FUNC (add_coll));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_REMOVE_ENTRY,
+	                     XMMS_CMD_FUNC (remove));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_MOVE_ENTRY,
+	                     XMMS_CMD_FUNC (move));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_CLEAR,
+	                     XMMS_CMD_FUNC (clear));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_SORT,
+	                     XMMS_CMD_FUNC (sort));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_LIST,
+	                     XMMS_CMD_FUNC (list_entries));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_INSERT_URL,
+	                     XMMS_CMD_FUNC (insert_url));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_INSERT_ID,
+	                     XMMS_CMD_FUNC (insert_id));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_INSERT_COLL,
+	                     XMMS_CMD_FUNC (insert_coll));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_RADD,
+	                     XMMS_CMD_FUNC (radd));
+
+	xmms_object_cmd_add (XMMS_OBJECT (ret),
+	                     XMMS_IPC_CMD_RINSERT,
+	                     XMMS_CMD_FUNC (rinsert));
+
 	ret->medialib = xmms_medialib_init (ret);
-	ret->colldag = xmms_collection_init (ret);
 	ret->mediainfordr = xmms_mediainfo_reader_start ();
+	ret->colldag = xmms_collection_init (ret);
 
 	return ret;
 }
@@ -328,7 +429,7 @@ xmms_playlist_advance_do (xmms_playlist_t *playlist)
 		ret = FALSE;
 	} else if ((size = xmms_playlist_coll_get_size (plcoll)) == 0) {
 		if (xmmsv_coll_attribute_get (plcoll, "jumplist", &jumplist)) {
-			xmms_playlist_client_load (buffer, jumplist, &err);
+			xmms_playlist_load (buffer, jumplist, &err);
 			if (xmms_error_isok (&err)) {
 				ret = xmms_playlist_advance_do (playlist);
 			} else {
@@ -347,7 +448,7 @@ xmms_playlist_advance_do (xmms_playlist_t *playlist)
 			xmms_collection_set_int_attr (plcoll, "position", 0);
 			XMMS_PLAYLIST_CURRPOS_MSG (0, XMMS_ACTIVE_PLAYLIST);
 
-			xmms_playlist_client_load (buffer, jumplist, &err);
+			xmms_playlist_load (buffer, jumplist, &err);
 			if (xmms_error_isok (&err)) {
 				ret = xmms_playlist_advance_do (playlist);
 			} else {
@@ -436,8 +537,8 @@ xmms_playlist_current_entry (xmms_playlist_t *playlist)
  *
  */
 GTree *
-xmms_playlist_client_current_pos (xmms_playlist_t *playlist, const gchar *plname,
-                                  xmms_error_t *err)
+xmms_playlist_current_pos (xmms_playlist_t *playlist, const gchar *plname,
+                           xmms_error_t *err)
 {
 	guint32 pos;
 	xmmsv_coll_t *plcoll;
@@ -471,7 +572,7 @@ xmms_playlist_client_current_pos (xmms_playlist_t *playlist, const gchar *plname
  *
  */
 static gchar *
-xmms_playlist_client_current_active (xmms_playlist_t *playlist, xmms_error_t *err)
+xmms_playlist_current_active (xmms_playlist_t *playlist, xmms_error_t *err)
 {
 	gchar *name = NULL;
 	xmmsv_coll_t *active_coll;
@@ -503,7 +604,7 @@ xmms_playlist_client_current_active (xmms_playlist_t *playlist, xmms_error_t *er
 
 
 static void
-xmms_playlist_client_load (xmms_playlist_t *playlist, const gchar *name, xmms_error_t *err)
+xmms_playlist_load (xmms_playlist_t *playlist, const gchar *name, xmms_error_t *err)
 {
 	xmmsv_coll_t *plcoll, *active_coll;
 
@@ -557,8 +658,8 @@ swap_entries (xmmsv_coll_t *coll, gint i, gint j)
  *
  */
 static void
-xmms_playlist_client_shuffle (xmms_playlist_t *playlist, const gchar *plname,
-                              xmms_error_t *err)
+xmms_playlist_shuffle (xmms_playlist_t *playlist, const gchar *plname,
+                       xmms_error_t *err)
 {
 	guint j,i;
 	gint len, currpos;
@@ -692,15 +793,14 @@ xmms_playlist_remove_by_entry (xmms_playlist_t *playlist,
  * Remove an entry from playlist.
  *
  */
-void
-xmms_playlist_client_remove_entry (xmms_playlist_t *playlist,
-                                   const gchar *plname,
-                                   gint32 pos, xmms_error_t *err)
+gboolean
+xmms_playlist_remove (xmms_playlist_t *playlist, const gchar *plname,
+                      guint pos, xmms_error_t *err)
 {
 	gboolean ret = FALSE;
 	xmmsv_coll_t *plcoll;
 
-	g_return_if_fail (playlist);
+	g_return_val_if_fail (playlist, FALSE);
 
 	g_mutex_lock (playlist->mutex);
 	plcoll = xmms_playlist_get_coll (playlist, plname, err);
@@ -708,6 +808,7 @@ xmms_playlist_client_remove_entry (xmms_playlist_t *playlist,
 		ret = xmms_playlist_remove_unlocked (playlist, plname, plcoll, pos, err);
 	}
 	g_mutex_unlock (playlist->mutex);
+	return ret;
 }
 
 
@@ -715,10 +816,9 @@ xmms_playlist_client_remove_entry (xmms_playlist_t *playlist,
  * Move an entry in playlist
  *
  */
-static void
-xmms_playlist_client_move_entry (xmms_playlist_t *playlist,
-                                 const gchar *plname, gint32 pos,
-                                 gint32 newpos, xmms_error_t *err)
+static gboolean
+xmms_playlist_move (xmms_playlist_t *playlist, const gchar *plname, guint pos,
+                    guint newpos, xmms_error_t *err)
 {
 	GTree *dict;
 	guint32 id;
@@ -726,7 +826,7 @@ xmms_playlist_client_move_entry (xmms_playlist_t *playlist,
 	gint64 ipos, inewpos;
 	xmmsv_coll_t *plcoll;
 
-	g_return_if_fail (playlist);
+	g_return_val_if_fail (playlist, FALSE);
 
 	XMMS_DBG ("Moving %d, to %d", pos, newpos);
 
@@ -736,7 +836,7 @@ xmms_playlist_client_move_entry (xmms_playlist_t *playlist,
 	if (plcoll == NULL) {
 		/* FIXME: happens ? */
 		g_mutex_unlock (playlist->mutex);
-		return;
+		return FALSE;
 	}
 
 	currpos = xmms_playlist_coll_get_currpos (plcoll);
@@ -746,13 +846,13 @@ xmms_playlist_client_move_entry (xmms_playlist_t *playlist,
 		xmms_error_set (err, XMMS_ERROR_NOENT,
 		                "Cannot move entry outside playlist");
 		g_mutex_unlock (playlist->mutex);
-		return;
+		return FALSE;
 	}
 
 	if (!xmmsv_coll_idlist_move (plcoll, pos, newpos)) {
 		xmms_error_set (err, XMMS_ERROR_NOENT, "Entry was not in list!");
 		g_mutex_unlock (playlist->mutex);
-		return;
+		return FALSE;
 	}
 
 	/* Update the current position pointer */
@@ -778,7 +878,7 @@ xmms_playlist_client_move_entry (xmms_playlist_t *playlist,
 
 	g_mutex_unlock (playlist->mutex);
 
-	return;
+	return TRUE;
 
 }
 
@@ -794,9 +894,9 @@ xmms_playlist_client_move_entry (xmms_playlist_t *playlist,
  * @return TRUE on success and FALSE otherwise.
  *
  */
-static void
-xmms_playlist_client_insert_url (xmms_playlist_t *playlist, const gchar *plname,
-                                 gint32 pos, const gchar *url, xmms_error_t *err)
+static gboolean
+xmms_playlist_insert_url (xmms_playlist_t *playlist, const gchar *plname,
+                          guint32 pos, const gchar *url, xmms_error_t *err)
 {
 	xmms_medialib_entry_t entry = 0;
 	xmms_medialib_session_t *session = xmms_medialib_begin_write ();
@@ -805,10 +905,10 @@ xmms_playlist_client_insert_url (xmms_playlist_t *playlist, const gchar *plname,
 	xmms_medialib_end (session);
 
 	if (!entry) {
-		return;
+		return FALSE;
 	}
 
-	xmms_playlist_client_insert_id (playlist, plname, pos, entry, err);
+	return xmms_playlist_insert_id (playlist, plname, pos, entry, err);
 }
 
 /**
@@ -823,8 +923,8 @@ xmms_playlist_client_insert_url (xmms_playlist_t *playlist, const gchar *plname,
   * @param err an #xmms_error_t that should be defined upon error.
   */
 static void
-xmms_playlist_client_rinsert (xmms_playlist_t *playlist, const gchar *plname, gint32 pos,
-                              const gchar *path, xmms_error_t *err)
+xmms_playlist_rinsert (xmms_playlist_t *playlist, const gchar *plname, guint32 pos,
+                       const gchar *path, xmms_error_t *err)
 {
 	/* we actually just call the medialib function, but keep
 	 * the ipc method here for not confusing users / developers
@@ -841,23 +941,26 @@ xmms_playlist_client_rinsert (xmms_playlist_t *playlist, const gchar *plname, gi
  * @param error Upon error this will be set.
  * @returns TRUE on success and FALSE otherwise.
  */
-static void
-xmms_playlist_client_insert_id (xmms_playlist_t *playlist, const gchar *plname,
-                                gint32 pos, xmms_medialib_entry_t file,
-                                xmms_error_t *err)
+static gboolean
+xmms_playlist_insert_id (xmms_playlist_t *playlist, const gchar *plname,
+                         guint32 pos, xmms_medialib_entry_t file,
+                         xmms_error_t *err)
 {
 	if (!xmms_medialib_check_id (file)) {
 		xmms_error_set (err, XMMS_ERROR_NOENT,
 		                "That is not a valid medialib id!");
+		return FALSE;
 	}
 
 	xmms_playlist_insert_entry (playlist, plname, pos, file, err);
+
+	return TRUE;
 }
 
-static void
-xmms_playlist_client_insert_collection (xmms_playlist_t *playlist, const gchar *plname,
-                                        gint32 pos, xmmsv_coll_t *coll,
-                                        xmmsv_t *order, xmms_error_t *err)
+static gboolean
+xmms_playlist_insert_collection (xmms_playlist_t *playlist, const gchar *plname,
+                                 guint32 pos, xmmsv_coll_t *coll,
+                                 xmmsv_t *order, xmms_error_t *err)
 {
 	GList *res;
 
@@ -867,13 +970,15 @@ xmms_playlist_client_insert_collection (xmms_playlist_t *playlist, const gchar *
 		xmmsv_t *val = (xmmsv_t*) res->data;
 		gint id;
 		xmmsv_get_int (val, &id);
-		xmms_playlist_client_insert_id (playlist, plname, pos, id, err);
+		xmms_playlist_insert_id (playlist, plname, pos, id, err);
 		xmmsv_unref (val);
 
 		res = g_list_delete_link (res, res);
 		pos++;
 	}
 
+	/* FIXME: detect errors? */
+	return TRUE;
 }
 
 /**
@@ -902,7 +1007,7 @@ xmms_playlist_insert_entry (xmms_playlist_t *playlist, const gchar *plname,
 	}
 
 	len = xmms_playlist_coll_get_size (plcoll);
-	if (pos > len) {
+	if (pos > len || pos < 0) {
 		xmms_error_set (err, XMMS_ERROR_GENERIC,
 		                "Could not insert entry outside of playlist!");
 		g_mutex_unlock (playlist->mutex);
@@ -937,9 +1042,9 @@ xmms_playlist_insert_entry (xmms_playlist_t *playlist, const gchar *plname,
   * @param err an #xmms_error_t that should be defined upon error.
   * @return TRUE on success and FALSE otherwise.
   */
-void
-xmms_playlist_client_add_url (xmms_playlist_t *playlist, const gchar *plname,
-                              const gchar *nurl, xmms_error_t *err)
+gboolean
+xmms_playlist_add_url (xmms_playlist_t *playlist, const gchar *plname,
+                       const gchar *nurl, xmms_error_t *err)
 {
 	xmms_medialib_entry_t entry = 0;
 	xmms_medialib_session_t *session = xmms_medialib_begin_write ();
@@ -951,6 +1056,8 @@ xmms_playlist_client_add_url (xmms_playlist_t *playlist, const gchar *plname,
 		xmms_playlist_add_entry (playlist, plname, entry, err);
 	}
 
+
+	return !!entry;
 }
 
 /**
@@ -964,8 +1071,8 @@ xmms_playlist_client_add_url (xmms_playlist_t *playlist, const gchar *plname,
   * @param err an #xmms_error_t that should be defined upon error.
   */
 static void
-xmms_playlist_client_radd (xmms_playlist_t *playlist, const gchar *plname,
-                           const gchar *path, xmms_error_t *err)
+xmms_playlist_radd (xmms_playlist_t *playlist, const gchar *plname,
+                    const gchar *path, xmms_error_t *err)
 {
 	/* we actually just call the medialib function, but keep
 	 * the ipc method here for not confusing users / developers
@@ -986,23 +1093,24 @@ xmms_playlist_client_radd (xmms_playlist_t *playlist, const gchar *plname,
  * @returns TRUE on success
  */
 
-void
-xmms_playlist_client_add_id (xmms_playlist_t *playlist, const gchar *plname,
-                             xmms_medialib_entry_t file, xmms_error_t *err)
+gboolean
+xmms_playlist_add_id (xmms_playlist_t *playlist, const gchar *plname,
+                      xmms_medialib_entry_t file, xmms_error_t *err)
 {
 	if (!xmms_medialib_check_id (file)) {
 		xmms_error_set (err, XMMS_ERROR_NOENT,
 		                "That is not a valid medialib id!");
-		return;
+		return FALSE;
 	}
 
 	xmms_playlist_add_entry (playlist, plname, file, err);
+
+	return TRUE;
 }
 
-void
-xmms_playlist_client_add_idlist (xmms_playlist_t *playlist,
-                                 const gchar *plname,
-                                 xmmsv_coll_t *coll, xmms_error_t *err)
+gboolean
+xmms_playlist_add_idlist (xmms_playlist_t *playlist, const gchar *plname,
+                          xmmsv_coll_t *coll, xmms_error_t *err)
 {
 	uint32_t *idlist;
 
@@ -1010,7 +1118,7 @@ xmms_playlist_client_add_idlist (xmms_playlist_t *playlist,
 		if (!xmms_medialib_check_id (*idlist)) {
 			xmms_error_set (err, XMMS_ERROR_NOENT,
 			                "Idlist contains invalid medialib id!");
-			return;
+			return FALSE;
 		}
 	}
 
@@ -1018,12 +1126,13 @@ xmms_playlist_client_add_idlist (xmms_playlist_t *playlist,
 		xmms_playlist_add_entry (playlist, plname, *idlist, err);
 	}
 
+	return TRUE;
 }
 
-void
-xmms_playlist_client_add_collection (xmms_playlist_t *playlist, const gchar *plname,
-                                     xmmsv_coll_t *coll, xmmsv_t *order,
-                                     xmms_error_t *err)
+gboolean
+xmms_playlist_add_collection (xmms_playlist_t *playlist, const gchar *plname,
+                              xmmsv_coll_t *coll, xmmsv_t *order,
+                              xmms_error_t *err)
 {
 	GList *res;
 
@@ -1039,6 +1148,8 @@ xmms_playlist_client_add_collection (xmms_playlist_t *playlist, const gchar *pln
 		res = g_list_delete_link (res, res);
 	}
 
+	/* FIXME: detect errors? */
+	return TRUE;
 }
 
 /**
@@ -1087,8 +1198,8 @@ xmms_playlist_add_entry_unlocked (xmms_playlist_t *playlist,
 
 /** Clear the playlist */
 static void
-xmms_playlist_client_clear (xmms_playlist_t *playlist, const gchar *plname,
-                            xmms_error_t *err)
+xmms_playlist_clear (xmms_playlist_t *playlist, const gchar *plname,
+                     xmms_error_t *err)
 {
 	xmmsv_coll_t *plcoll;
 
@@ -1143,7 +1254,7 @@ xmms_playlist_set_current_position_do (xmms_playlist_t *playlist, guint32 pos,
 		xmms_collection_set_int_attr (plcoll, "position", 0);
 		XMMS_PLAYLIST_CURRPOS_MSG (0, XMMS_ACTIVE_PLAYLIST);
 
-		xmms_playlist_client_load (playlist, jumplist, err);
+		xmms_playlist_load (playlist, jumplist, err);
 		if (xmms_error_iserror (err)) {
 			return 0;
 		}
@@ -1169,8 +1280,8 @@ xmms_playlist_set_current_position_do (xmms_playlist_t *playlist, guint32 pos,
 }
 
 gint
-xmms_playlist_client_set_next (xmms_playlist_t *playlist, gint32 pos,
-                               xmms_error_t *err)
+xmms_playlist_set_current_position (xmms_playlist_t *playlist, guint32 pos,
+                                    xmms_error_t *err)
 {
 	guint mid;
 	g_return_val_if_fail (playlist, FALSE);
@@ -1183,8 +1294,8 @@ xmms_playlist_client_set_next (xmms_playlist_t *playlist, gint32 pos,
 }
 
 static gint
-xmms_playlist_client_set_next_rel (xmms_playlist_t *playlist, gint32 pos,
-                                   xmms_error_t *err)
+xmms_playlist_set_current_position_rel (xmms_playlist_t *playlist, gint32 pos,
+                                        xmms_error_t *err)
 {
 	gint currpos, newpos;
 	guint mid = 0;
@@ -1359,8 +1470,8 @@ xmms_playlist_sorted_unwind (gpointer data, gpointer userdata)
  */
 
 static void
-xmms_playlist_client_sort (xmms_playlist_t *playlist, const gchar *plname,
-                           xmmsv_t *properties, xmms_error_t *err)
+xmms_playlist_sort (xmms_playlist_t *playlist, const gchar *plname,
+                    xmmsv_t *properties, xmms_error_t *err)
 {
 	guint32 i;
 	GList *tmp = NULL, *n;
@@ -1493,8 +1604,8 @@ xmms_playlist_client_sort (xmms_playlist_t *playlist, const gchar *plname,
 
 /** List a playlist */
 static GList *
-xmms_playlist_client_list_entries (xmms_playlist_t *playlist, const gchar *plname,
-                                   xmms_error_t *err)
+xmms_playlist_list_entries (xmms_playlist_t *playlist, const gchar *plname,
+                            xmms_error_t *err)
 {
 	GList *entries = NULL;
 	xmmsv_coll_t *plcoll;
@@ -1558,7 +1669,9 @@ xmms_playlist_destroy (xmms_object_t *object)
 	xmms_object_unref (playlist->colldag);
 	xmms_object_unref (playlist->mediainfordr);
 
-	xmms_playlist_unregister_ipc_commands ();
+	xmms_ipc_broadcast_unregister (XMMS_IPC_SIGNAL_PLAYLIST_CHANGED);
+	xmms_ipc_broadcast_unregister (XMMS_IPC_SIGNAL_PLAYLIST_CURRENT_POS);
+	xmms_ipc_object_unregister (XMMS_IPC_OBJECT_PLAYLIST);
 }
 
 

@@ -32,7 +32,7 @@ x_path2url (gchar *path)
 }
 
 gint
-find_terminal_width (void)
+find_terminal_width ()
 {
 	gint columns = 0;
 	struct winsize ws;

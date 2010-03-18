@@ -65,8 +65,5 @@ gint column_display_render_time (column_display_t *disp, column_def_t *coldef, x
 gint column_display_render_property (column_display_t *disp, column_def_t *coldef, xmmsv_t *val);
 gint column_display_render_format (column_display_t *disp, column_def_t *coldef, xmmsv_t *val);
 
-void column_display_set_position (column_display_t *disp, gint pos);
-
-void column_display_set_list_marker (column_display_t *disp, const gchar *marker);
 
 #endif /* __COLUMN_DISPLAY_H__ */

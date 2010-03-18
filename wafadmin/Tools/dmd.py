@@ -4,32 +4,28 @@
 # Thomas Nagy, 2008 (ita)
 
 import sys
-import Utils, ar
-from Configure import conftest
+import ar
 
-@conftest
 def find_dmd(conf):
-	conf.find_program(['dmd', 'ldc'], var='D_COMPILER', mandatory=True)
-
-@conftest
-def common_flags_ldc(conf):
 	v = conf.env
-	v['DFLAGS']         = ['-d-version=Posix']
-	v['DLINKFLAGS']     = []
-	v['D_shlib_DFLAGS'] = ['-relocation-model=pic']
+	d_compiler = None
+	if v['D_COMPILER']:
+		d_compiler = v['D_COMPILER']
+	if not d_compiler: d_compiler = conf.find_program('dmd', var='D_COMPILER')
+	if not d_compiler: return 0
+	v['D_COMPILER'] = d_compiler
 
-@conftest
-def common_flags_dmd(conf):
+def common_flags(conf):
 	v = conf.env
 
-	# _DFLAGS _DIMPORTFLAGS
+	# _DFLAGS _DIMPORTFLAGS _DLIBDIRFLAGS _DLIBFLAGS
 
 	# Compiler is dmd so 'gdc' part will be ignored, just
 	# ensure key is there, so wscript can append flags to it
-	v['DFLAGS']            = ['-version=Posix']
+	v['DFLAGS']            = {'gdc': [], 'dmd': ['-version=Posix']}
 
 	v['D_SRC_F']           = ''
-	v['D_TGT_F']           = ['-c', '-of']
+	v['D_TGT_F']           = '-c -of'
 	v['DPATH_ST']          = '-I%s' # template for adding import paths
 
 	# linker
@@ -50,15 +46,23 @@ def common_flags_dmd(conf):
 	v['D_shlib_LINKFLAGS'] = ['-L-shared']
 
 	v['DHEADER_ext']       = '.di'
-	v['D_HDR_F']           = ['-H', '-Hf']
+	v['D_HDR_F']           = '-H -Hf'
+
+	if sys.platform == "win32":
+		v['D_program_PATTERN']   = '%s.exe'
+		v['D_shlib_PATTERN']     = 'lib%s.dll'
+		v['D_staticlib_PATTERN'] = 'lib%s.a'
+	else:
+		v['D_program_PATTERN']   = '%s'
+		v['D_shlib_PATTERN']     = 'lib%s.so'
+		v['D_staticlib_PATTERN'] = 'lib%s.a'
 
 def detect(conf):
-	conf.find_dmd()
-	conf.check_tool('ar')
+	v = conf.env
+	find_dmd(conf)
+	ar.find_ar(conf)
 	conf.check_tool('d')
-	conf.common_flags_dmd()
-	conf.d_platform_flags()
+	common_flags(conf)
 
-	if conf.env.D_COMPILER.find('ldc') > -1:
-		conf.common_flags_ldc()
-
+def set_options(opt):
+	pass

@@ -37,12 +37,8 @@ N: Raphaël Bois
 E: vdust@free.fr
 D: Bindata bugfix.
 
-N: Romain Boissat
-E: r.boissat@gmail.com
-D: nycli documentation fix.
-
 N: Alexander Botero-Lowry
-E: alex.boterolowry@gmail.com
+E: alex@foxybanana.com
 D: *BSD support. Manpages. Various fixes.
 
 N: Nicolas Botti
@@ -56,9 +52,9 @@ P: 1024D/AEE9D6B9 B1C7 08AB D8B8 54C6 4002  CD67 92B4 3BB6 AEE9 D6B9
 D: Collections. Various fixes.
 
 N: Daniel Chokola
-E: dan.chokola@gmail.com
-P: 2048R/EF06AA43 2A8A BAB9 B80F C170 BA16  4738 3470 9525 EF06 AA43
-D: Ruby. Various fixes.
+E: dan@chokola.com
+W: http://dan.chokola.com/
+D: Various fixes.
 
 N: Sadrul Habib Chowdhury
 E: imadil@gmail.com
@@ -99,8 +95,7 @@ D: Equaliser fixes
 N: Anthony Garcia
 E: anthony@agg.homelinux.net
 P: 1024D/076F9E89 9467 6082 8A35 2E1E 2D6B  76C4 5E9A ED56 076F 9E89
-D: Compatibility fix to avcodec plugin, flv, various nycli contributions,
-D: various fixes, log timestamps.
+D: Compatibility fix to avcodec plugin.
 
 N: Paul Giblock
 E: drfaygo@gmail.com
@@ -117,10 +112,6 @@ D: Fix remove command in cli.
 N: Jonathan Horowitz
 E: jhorowitz@cs.uri.edu
 D: GME plugin improvements.
-
-N: Sin-Da Hsiea
-E: ibmibmibm.tw@gmail.com
-D: Bugfix
 
 N: Olle Hällnäs
 E: olle@xmms.org
@@ -141,10 +132,6 @@ D: Visualization
 N: Daniel Kamiński
 E: maniel.rulez@gmail.com
 D: mlib remove command in cli, Ruby fixes.
-
-N: Kyle Kramer
-E: kylegkramer@gmail.com
-D: sc68 xform
 
 N: Karsten Krispin
 E: karsten@krispin.de
@@ -196,10 +183,6 @@ N: Chris Morgan
 E: cmorgan@alum.wpi.edu
 D: Jack output plugin.
 
-N: Adam Nielsen
-E: a.nielsen@shikadi.net
-D: ModPlug configuration.
-
 N: Thomas Nilsson
 E: thomas@xmms.org
 D: Bugfixes. XMMS1 expertise.
@@ -207,7 +190,7 @@ D: Bugfixes. XMMS1 expertise.
 N: Sebastian Noack
 E: sebastian.noack@gmail.com
 P: 1024D/89789A18 5872 C79A D65E 3417 B365  C39B 85E7 F6EC 8978 9A18
-D: Bugfixes.
+D: Better track number support in ASF.
 
 N: Vegard Nossum
 E: vegard@peltkore.net
@@ -240,10 +223,6 @@ D: Python XMMSSync-proxy. PythonAPI fixes.
 N: Algardas Pelakauskas
 E: algardas@gmail.com
 D: Ruby radd binding
-
-N: Jan Pobrislo
-E: ccx@webprojekty.cz
-D: Optional ldconfig in buildsystem
 
 N: Andrew G Potter
 E: agpotter@ucdavis.edu
@@ -283,7 +262,6 @@ D: Various fixes
 
 N: Tobias Rundström
 E: tru@xmms.org
-E: tobias.rundstrom@purplescout.se
 W: http://tobi.nu/
 P: 1024D/9B1FA0CB 527E C4EC D205 88ED FC07  B744 315F F685 9B1F A0CB
 D: Stuff all over the map. Release manager.
@@ -296,12 +274,8 @@ N: Tilman Sauerbeck
 E: tilman@code-monkey.de
 E: tilman@xmms.org
 W: http://code-monkey.de/
-P: 4096R/B4517D88 ED65 2BA4 602E 90B1 3EEE  A87D 53CD DC31 B451 7D88
+P: 1024D/5E587462 E3B5 FB50 70F3 376F 53C9  9957 EADC 791F 5E58 7462
 D: Ruby bindings. Many other things all over the place.
-
-N: Dean Scarff
-E: dos@scarff.id.au
-D: Mac OS X fixes
 
 N: Georg Schild
 E: dangertools@gmail.com
@@ -343,11 +317,6 @@ D: DAAP xform.
 N: Bryan Taylor
 E: bryan.a.taylor@gmail.com
 D: Various fixes
-
-N: Sergei Trofimovich
-E: slyich@gmail.com
-E: slyfox@inbox.ru
-D: Various Cleanups
 
 N: Rémi Vanicat
 E: remi.vanicat@gmail.com

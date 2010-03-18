@@ -120,12 +120,10 @@ xmmsc_result_t *xmmsc_playback_tickle (xmmsc_connection_t *c);
 xmmsc_result_t *xmmsc_playback_start (xmmsc_connection_t *c);
 xmmsc_result_t *xmmsc_playback_pause (xmmsc_connection_t *c);
 xmmsc_result_t *xmmsc_playback_current_id (xmmsc_connection_t *c);
-xmmsc_result_t *xmmsc_playback_seek_ms (xmmsc_connection_t *c, int milliseconds, xmms_playback_seek_mode_t whence);
-xmmsc_result_t *xmmsc_playback_seek_ms_abs (xmmsc_connection_t *c, int milliseconds) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_playback_seek_ms_rel (xmmsc_connection_t *c, int milliseconds) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_playback_seek_samples (xmmsc_connection_t *c, int samples, xmms_playback_seek_mode_t whence);
-xmmsc_result_t *xmmsc_playback_seek_samples_abs (xmmsc_connection_t *c, int samples) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_playback_seek_samples_rel (xmmsc_connection_t *c, int samples) XMMS_DEPRECATED;
+xmmsc_result_t *xmmsc_playback_seek_ms (xmmsc_connection_t *c, int milliseconds);
+xmmsc_result_t *xmmsc_playback_seek_ms_rel (xmmsc_connection_t *c, int milliseconds);
+xmmsc_result_t *xmmsc_playback_seek_samples (xmmsc_connection_t *c, int samples);
+xmmsc_result_t *xmmsc_playback_seek_samples_rel (xmmsc_connection_t *c, int samples);
 xmmsc_result_t *xmmsc_playback_playtime (xmmsc_connection_t *c);
 xmmsc_result_t *xmmsc_playback_status (xmmsc_connection_t *c);
 xmmsc_result_t *xmmsc_playback_volume_set (xmmsc_connection_t *c, const char *channel, int volume);
@@ -145,19 +143,13 @@ xmmsc_result_t *xmmsc_signal_playback_playtime (xmmsc_connection_t *c);
  */
 
 /* commands */
-xmmsc_result_t *xmmsc_configval_set (xmmsc_connection_t *c, const char *key, const char *val) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_configval_list (xmmsc_connection_t *c) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_configval_get (xmmsc_connection_t *c, const char *key) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_configval_register (xmmsc_connection_t *c, const char *valuename, const char *defaultvalue) XMMS_DEPRECATED;
-
-xmmsc_result_t *xmmsc_config_set_value (xmmsc_connection_t *c, const char *key, const char *val);
-xmmsc_result_t *xmmsc_config_list_values (xmmsc_connection_t *c);
-xmmsc_result_t *xmmsc_config_get_value (xmmsc_connection_t *c, const char *key);
-xmmsc_result_t *xmmsc_config_register_value (xmmsc_connection_t *c, const char *valuename, const char *defaultvalue);
+xmmsc_result_t *xmmsc_configval_set (xmmsc_connection_t *c, const char *key, const char *val);
+xmmsc_result_t *xmmsc_configval_list (xmmsc_connection_t *c);
+xmmsc_result_t *xmmsc_configval_get (xmmsc_connection_t *c, const char *key);
+xmmsc_result_t *xmmsc_configval_register (xmmsc_connection_t *c, const char *valuename, const char *defaultvalue);
 
 /* broadcasts */
-xmmsc_result_t *xmmsc_broadcast_configval_changed (xmmsc_connection_t *c) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_broadcast_config_value_changed (xmmsc_connection_t *c);
+xmmsc_result_t *xmmsc_broadcast_configval_changed (xmmsc_connection_t *c);
 
 
 /*
@@ -165,10 +157,7 @@ xmmsc_result_t *xmmsc_broadcast_config_value_changed (xmmsc_connection_t *c);
  */
 
 /* commands */
-xmmsc_result_t *xmmsc_plugin_list (xmmsc_connection_t *c, xmms_plugin_type_t type) XMMS_DEPRECATED;
-
-xmmsc_result_t *xmmsc_main_list_plugins (xmmsc_connection_t *c, xmms_plugin_type_t type);
-
+xmmsc_result_t *xmmsc_plugin_list (xmmsc_connection_t *c, xmms_plugin_type_t type);
 xmmsc_result_t *xmmsc_main_stats (xmmsc_connection_t *c);
 
 /* broadcasts */
@@ -220,10 +209,8 @@ xmmsc_result_t *xmmsc_medialib_add_entry_args (xmmsc_connection_t *conn, const c
 xmmsc_result_t *xmmsc_medialib_add_entry_full (xmmsc_connection_t *conn, const char *url, xmmsv_t *args);
 xmmsc_result_t *xmmsc_medialib_add_entry_encoded (xmmsc_connection_t *conn, const char *url);
 xmmsc_result_t *xmmsc_medialib_get_info (xmmsc_connection_t *, int);
-xmmsc_result_t *xmmsc_medialib_path_import (xmmsc_connection_t *conn, const char *path) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_medialib_path_import_encoded (xmmsc_connection_t *conn, const char *path) XMMS_DEPRECATED;
-xmmsc_result_t *xmmsc_medialib_import_path (xmmsc_connection_t *conn, const char *path);
-xmmsc_result_t *xmmsc_medialib_import_path_encoded (xmmsc_connection_t *conn, const char *path);
+xmmsc_result_t *xmmsc_medialib_path_import (xmmsc_connection_t *conn, const char *path);
+xmmsc_result_t *xmmsc_medialib_path_import_encoded (xmmsc_connection_t *conn, const char *path);
 xmmsc_result_t *xmmsc_medialib_rehash (xmmsc_connection_t *conn, int id);
 xmmsc_result_t *xmmsc_medialib_get_id (xmmsc_connection_t *conn, const char *url);
 xmmsc_result_t *xmmsc_medialib_get_id_encoded (xmmsc_connection_t *conn, const char *url);

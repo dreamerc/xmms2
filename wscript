@@ -23,7 +23,7 @@ import Build
 import Configure
 from logging import fatal, warning
 
-BASEVERSION="0.7 DrNo"
+BASEVERSION="0.6 DrMattDestruction"
 APPNAME='xmms2'
 
 srcdir='.'
@@ -102,9 +102,9 @@ def build(bld):
                'NAME': name,
                 'LIB': lib,
              'PREFIX': bld.env['PREFIX'],
-             'BINDIR': bld.env['BINDIR'],
-             'LIBDIR': bld.env['LIBDIR'],
-         'INCLUDEDIR': os.path.join(bld.env.INCLUDEDIR, "xmms2"),
+             'BINDIR': os.path.join("${prefix}", "bin"),
+             'LIBDIR': os.path.join("${prefix}", "lib"),
+         'INCLUDEDIR': os.path.join("${prefix}", "include", "xmms2"),
             'VERSION': bld.env["VERSION"],
         }
         obj.install_path = '${PKGCONFIGDIR}'
@@ -146,11 +146,10 @@ def _configure_optionals(conf):
 
     for o in selected_optionals:
         x = [x for x in optional_subdirs if os.path.basename(x) == o][0]
-        try:
-            conf.sub_config(x)
+        if conf.sub_config(x):
             conf.env.append_value('XMMS_OPTIONAL_BUILD', x)
             succeeded_optionals.add(o)
-        except Configure.ConfigurationError:
+        else:
             failed_optionals.add(o)
 
     if optionals_must_work and failed_optionals:
@@ -220,20 +219,20 @@ def _configure_plugins(conf):
 def _output_summary(enabled_plugins, disabled_plugins,
                     enabled_optionals, disabled_optionals,
                     output_plugins):
-    Utils.pprint('Normal', "\nOptional configuration:\n======================")
-    Utils.pprint('Normal', "Enabled: ", sep='')
+    print("\nOptional configuration:\n======================")
+    sys.stdout.write("Enabled: ")
     Utils.pprint('BLUE', ', '.join(sorted(enabled_optionals)))
-    Utils.pprint('Normal', "Disabled: ", sep='')
+    sys.stdout.write("Disabled: ")
     Utils.pprint('BLUE', ", ".join(sorted(disabled_optionals)))
-    Utils.pprint('Normal', "\nPlugins configuration:\n======================")
+    print("\nPlugins configuration:\n======================")
 
     enabled_plugins = [x for x in enabled_plugins if x not in output_plugins]
 
-    Utils.pprint('Normal', "Output:")
+    print("Output:")
     Utils.pprint('BLUE', ", ".join(sorted(output_plugins)))
-    Utils.pprint('Normal', "XForm/Other:")
+    print("XForm/Other:")
     Utils.pprint('BLUE', ", ".join(sorted(enabled_plugins)))
-    Utils.pprint('Normal', "Disabled:")
+    print("Disabled:")
     Utils.pprint('BLUE', ", ".join(sorted(disabled_plugins)))
 
 def configure(conf):
@@ -248,7 +247,11 @@ def configure(conf):
         conf.env["BUILD_XMMS2D"] = True
         subdirs.insert(0, "src/xmms")
 
-    conf.check_tool('gnu_dirs')
+    if Options.options.manualdir:
+        conf.env["MANDIR"] = Options.options.manualdir
+    else:
+        conf.env["MANDIR"] = os.path.join(conf.env["PREFIX"], "share", "man")
+
     conf.check_tool('man', tooldir=os.path.abspath('waftools'))
     conf.check_tool('misc')
     conf.check_tool('gcc')
@@ -276,34 +279,25 @@ def configure(conf):
         conf.env["VERSION"] = BASEVERSION + " (git commit: %s%s)" % (nam, dirty)
 
     conf.env["CCFLAGS"] = Utils.to_list(conf.env["CCFLAGS"]) + ['-g', '-O0']
-    for warning in ('all',
-                    'no-format-extra-args',
-                    'no-format-zero-length',
-                    'format-nonliteral',
-                    'format-security',
-                    'format=2',
-                    "missing-prototypes",
-                    "strict-prototypes",
-                    "empty-body",
-                    "ignored-qualifiers",
-                    "type-limits",
-                    "write-strings",
-                    ):
-        warnflag = "-W%s" % warning
-        if conf.check_cc(cflags=warnflag):
-            conf.env["CCFLAGS"].append(warnflag)
-            # autogenerate uselib definitions to disable warnings
-            conf.env["CCFLAGS_NO%s" % warning.replace("-","").upper()] = ["-Wno-%s" % warning]
-
     conf.env["CXXFLAGS"] = Utils.to_list(conf.env["CXXFLAGS"]) + ['-g', '-O0']
     conf.env['XMMS_PKGCONF_FILES'] = []
     conf.env['XMMS_OUTPUT_PLUGINS'] = [(-1, "NONE")]
+
+    if Options.options.bindir:
+        conf.env["BINDIR"] = Options.options.bindir
+    else:
+        conf.env["BINDIR"] = os.path.join(conf.env["PREFIX"], "bin")
+
+    if Options.options.libdir:
+        conf.env["LIBDIR"] = Options.options.libdir
+    else:
+        conf.env["LIBDIR"] = os.path.join(conf.env["PREFIX"], "lib")
 
     if Options.options.pkgconfigdir:
         conf.env['PKGCONFIGDIR'] = Options.options.pkgconfigdir
         print(conf.env['PKGCONFIGDIR'])
     else:
-        conf.env['PKGCONFIGDIR'] = os.path.join(conf.env["LIBDIR"], "pkgconfig")
+        conf.env['PKGCONFIGDIR'] = os.path.join(conf.env["PREFIX"], "lib", "pkgconfig")
 
     if Options.options.config_prefix:
         for dir in Options.options.config_prefix:
@@ -390,11 +384,10 @@ def configure(conf):
                     'consider installing the WSPiApi.h header for ' +
                     'compatibility. It is provided by the Platform SDK.')
 
-        conf.env['CCDEFINES'] += [
+        conf.env['CCDEFINES_socket'] += [
             '_WIN32_WINNT=0x%02x%02x' % (major, minor),
-            'HAVE_WINSOCK2=1'
+            'HAVE_WINSOCK2', 1
         ]
-        conf.env['CXXDEFINES'] = conf.env['CCDEFINES']
 
         conf.env['socket_impl'] = 'wsock32'
     # Default POSIX sockets
@@ -412,7 +405,6 @@ def configure(conf):
     conf.env['NEWEST_WSCRIPT_SUBDIR'] = newest
 
     [conf.sub_config(s) for s in subdirs]
-    conf.write_config_header('xmms_configuration.h')
 
     output_plugins = [name for x,name in conf.env["XMMS_OUTPUT_PLUGINS"] if x > 0]
 
@@ -436,7 +428,9 @@ def _list_cb(option, opt, value, parser):
     setattr(parser.values, option.dest, vals)
 
 def set_options(opt):
-    opt.tool_options('gnu_dirs')
+    opt.add_option('--prefix', default=Options.default_prefix, dest='prefix',
+                   help="installation prefix (configuration only) [Default: '%s']" % Options.default_prefix)
+
     opt.tool_options('gcc')
 
     opt.add_option('--with-custom-version', type='string',
@@ -461,6 +455,12 @@ def set_options(opt):
                    help="Specify a directory to prepend to configuration prefix")
     opt.add_option('--without-xmms2d', action='store_true', default=False,
                    dest='without_xmms2d', help="Skip build of xmms2d")
+    opt.add_option('--with-mandir', type='string', dest='manualdir',
+                   help="Specify directory where to install man pages")
+    opt.add_option('--with-bindir', type='string', dest='bindir',
+                   help="Specify directory where to install executables")
+    opt.add_option('--with-libdir', type='string', dest='libdir',
+                   help="Specify directory where to install libraries")
     opt.add_option('--with-pkgconfigdir', type='string', dest='pkgconfigdir',
                    help="Specify directory where to install pkg-config files")
     opt.add_option('--with-target-platform', type='string',
@@ -470,20 +470,13 @@ def set_options(opt):
                    help="Force a specific Windows version (cross-compilation)")
     opt.add_option('--run-tests', action='store_true', default=False,
                    dest='run_tests', help="Run test suite")
-    opt.add_option('--with-ldconfig', action='store_true', default=None,
-                   dest='ldconfig', help="Run ldconfig after install even if not root")
-    opt.add_option('--without-ldconfig', action='store_false',
-                   dest='ldconfig', help="Don't run ldconfig after install")
 
     opt.sub_options("src/xmms")
     for o in optional_subdirs + subdirs:
         opt.sub_options(o)
 
 def shutdown():
-    if Options.commands['install'] and (
-            Options.options.ldconfig or
-            (Options.options.ldconfig is None and os.geteuid() == 0)
-            ):
+    if Options.commands['install'] and os.geteuid() == 0:
         ldconfig = '/sbin/ldconfig'
         if os.path.isfile(ldconfig):
             libprefix = Utils.subst_vars('${PREFIX}/lib', Build.bld.env)
@@ -491,5 +484,4 @@ def shutdown():
             except: pass
 
     if Options.options.run_tests:
-        os.system(os.path.join(blddir, "default/tests/test_xmmstypes"))
-        os.system(os.path.join(blddir, "default/tests/test_server"))
+        os.system(os.path.join(os.getenv('WAF_HOME'), "default/tests/test_xmmstypes"))

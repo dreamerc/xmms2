@@ -33,9 +33,7 @@ static void
 add_item_to_playlist (xmmsc_connection_t *conn, gchar *playlist, gchar *item)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
 	gchar *url;
-	const char *errmsg;
 
 	url = format_url (item, G_FILE_TEST_IS_REGULAR);
 	if (!url) {
@@ -46,9 +44,9 @@ add_item_to_playlist (xmmsc_connection_t *conn, gchar *playlist, gchar *item)
 	xmmsc_result_wait (res);
 	g_free (url);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't add %s to playlist: %s\n", item, errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't add %s to playlist: %s\n", item,
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 
@@ -79,8 +77,6 @@ static void
 playlist_setup_pshuffle (xmmsc_connection_t *conn, xmmsv_coll_t *coll, gchar *ref)
 {
 	xmmsc_result_t *psres;
-	xmmsv_t *psval;
-	const char *errmsg;
 	xmmsv_coll_t *refcoll;
 	gchar *s_name, *s_namespace;
 
@@ -95,9 +91,8 @@ playlist_setup_pshuffle (xmmsc_connection_t *conn, xmmsv_coll_t *coll, gchar *re
 		psres = xmmsc_coll_get (conn, s_name, s_namespace);
 		xmmsc_result_wait (psres);
 
-		psval = xmmsc_result_get_value (psres);
-		if (xmmsv_get_error (psval, &errmsg)) {
-			print_error ("%s", errmsg);
+		if (xmmsc_result_iserror (psres)) {
+			print_error ("%s", xmmsc_result_get_error (psres));
 		}
 
 		refcoll = xmmsv_coll_new (XMMS_COLLECTION_TYPE_REFERENCE);
@@ -154,8 +149,6 @@ cmd_addid (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	gint i;
 	gchar *playlist = NULL;
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 3) {
 		print_error ("Need a medialib id to add");
@@ -167,9 +160,9 @@ cmd_addid (xmmsc_connection_t *conn, gint argc, gchar **argv)
 			res = xmmsc_playlist_add_id (conn, playlist, id);
 			xmmsc_result_wait (res);
 
-			val = xmmsc_result_get_value (res);
-			if (xmmsv_get_error (val, &errmsg)) {
-				print_error ("Couldn't add %d to playlist: %s", id, errmsg);
+			if (xmmsc_result_iserror (res)) {
+				print_error ("Couldn't add %d to playlist: %s", id,
+				             xmmsc_result_get_error (res));
 			}
 			xmmsc_result_unref (res);
 
@@ -244,8 +237,6 @@ void
 cmd_addarg (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	gchar *playlist = NULL;
 	gchar *url;
 	int arg_start = 3;
@@ -271,9 +262,9 @@ cmd_addarg (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_add_full (conn, playlist, url, args);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't add %s to playlist: %s\n", url, errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't add %s to playlist: %s\n", url,
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 
@@ -290,8 +281,6 @@ cmd_insert (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	gchar *url;
 	char *endptr;
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 4) {
 		print_error ("Need a position and a file");
@@ -313,9 +302,9 @@ cmd_insert (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_insert_url (conn, playlist, pos, url);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Unable to add %s at postion %u: %s", url, pos, errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Unable to add %s at postion %u: %s", url,
+		             pos, xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 
@@ -331,8 +320,6 @@ cmd_insertid (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	guint pos, mlib_id;
 	char *endptr;
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 4) {
 		print_error ("Need a position and a medialib id");
@@ -350,10 +337,9 @@ cmd_insertid (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_insert_id (conn, playlist, pos, mlib_id);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
+	if (xmmsc_result_iserror (res)) {
 		print_error ("Unable to insert %u at position %u: %s", mlib_id,
-		             pos, errmsg);
+		             pos, xmmsc_result_get_error (res));
 	}
 
 	print_info ("Inserted %u at position %u", mlib_id, pos);
@@ -374,8 +360,6 @@ cmd_radd (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 	for (i = 2; i < argc; i++) {
 		gchar *rfile;
-		xmmsv_t *val;
-		const char *errmsg;
 
 		if (i == 2 && argc > 3 && !g_file_test (argv[i], G_FILE_TEST_EXISTS)) {
 			playlist = argv[i];
@@ -393,9 +377,9 @@ cmd_radd (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 		xmmsc_result_wait (res);
 
-		val = xmmsc_result_get_value (res);
-		if (xmmsv_get_error (val, &errmsg)) {
-			print_info ("Cannot add path '%s': %s", argv[i], errmsg);
+		if (xmmsc_result_iserror (res)) {
+			print_info ("Cannot add path '%s': %s",
+			            argv[i], xmmsc_result_get_error (res));
 		}
 
 		xmmsc_result_unref (res);
@@ -428,8 +412,6 @@ cmd_rinsert (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 	for (i = fileargn; i < argc; i++) {
 		gchar *rfile;
-		xmmsv_t *val;
-		const char *errmsg;
 
 		rfile = format_url (argv[i], G_FILE_TEST_IS_DIR);
 		if (!rfile) {
@@ -442,10 +424,9 @@ cmd_rinsert (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 		xmmsc_result_wait (res);
 
-		val = xmmsc_result_get_value (res);
-		if (xmmsv_get_error (val, &errmsg)) {
+		if (xmmsc_result_iserror (res)) {
 			print_info ("Cannot insert path '%s' at position %u: %s",
-			            argv[i], pos, errmsg);
+			            argv[i], pos, xmmsc_result_get_error (res));
 		}
 
 		xmmsc_result_unref (res);
@@ -457,8 +438,6 @@ cmd_clear (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	gchar *playlist = NULL;
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc == 3) {
 		playlist = argv[2];
@@ -467,9 +446,8 @@ cmd_clear (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_clear (conn, playlist);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -480,8 +458,6 @@ cmd_shuffle (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	gchar *playlist = NULL;
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc == 3) {
 		playlist = argv[2];
@@ -490,9 +466,8 @@ cmd_shuffle (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_shuffle (conn, playlist);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -504,8 +479,6 @@ cmd_sort (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	gchar *playlist;
 	xmmsv_t *sortby;
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 3) {
 		print_error ("Sort needs a property to sort on");
@@ -520,16 +493,15 @@ cmd_sort (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_sort (conn, playlist, sortby);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 	xmmsv_unref (sortby);
 }
 
 
-static gint
+gint
 cmp (const void *av, const void *bv)
 {
 	gint result;
@@ -574,15 +546,13 @@ cmd_remove (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 	for (i = 0; i < size; i++) {
 		gint pos = sort[i];
-		xmmsv_t *val;
-		const char *errmsg;
 
 		xmmsc_result_t *res = xmmsc_playlist_remove_entry (conn, playlist, pos);
 		xmmsc_result_wait (res);
 
-		val = xmmsc_result_get_value (res);
-		if (xmmsv_get_error (val, &errmsg)) {
-			print_error ("Couldn't remove %d (%s)", pos, errmsg);
+		if (xmmsc_result_iserror (res)) {
+			print_error ("Couldn't remove %d (%s)", pos,
+			             xmmsc_result_get_error (res));
 		}
 		xmmsc_result_unref (res);
 	}
@@ -597,7 +567,6 @@ cmd_list (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	gchar *playlist = NULL;
 	xmmsc_result_t *res;
 	xmmsv_t *val;
-	const char *errmsg;
 	xmmsv_list_iter_t *it;
 	gulong total_playtime = 0;
 	gint p = 0;
@@ -622,15 +591,14 @@ cmd_list (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	xmmsv_get_list_iter (val, &it);
 	while (xmmsv_list_iter_valid (it)) {
 		xmmsc_result_t *info_res;
 		xmmsv_t *val_id, *propdict, *info_val;
-		const char *errmsg;
 		gchar line[80];
 		gint playtime = 0;
 		gint ui;
@@ -645,28 +613,28 @@ cmd_list (xmmsc_connection_t *conn, gint argc, gchar **argv)
 		propdict = xmmsc_result_get_value (info_res);
 		info_val = xmmsv_propdict_to_dict (propdict, NULL);
 
-		if (xmmsv_get_error (info_val, &errmsg)) {
-			print_error ("%s", errmsg);
+		if (xmmsv_is_error (info_val)) {
+			print_error ("%s", xmmsv_get_error_old (info_val));
 		}
 
 		if (xmmsv_dict_entry_get_int (info_val, "duration", &playtime)) {
 			total_playtime += playtime;
 		}
 
-		if (xmmsv_dict_has_key (info_val, "channel")) {
-			if (xmmsv_dict_has_key (info_val, "title")) {
-				xmmsv_dict_format (line, sizeof (line),
-				                   "[stream] ${title}", info_val);
+		if (val_has_key (info_val, "channel")) {
+			if (val_has_key (info_val, "title")) {
+				xmmsc_entry_format (line, sizeof (line),
+				                    "[stream] ${title}", info_val);
 			} else {
-				xmmsv_dict_format (line, sizeof (line),
-				                   "${channel}", info_val);
+				xmmsc_entry_format (line, sizeof (line),
+				                    "${channel}", info_val);
 			}
-		} else if (!xmmsv_dict_has_key (info_val, "title")) {
+		} else if (!val_has_key (info_val, "title")) {
 			const gchar *url;
 			gchar dur[10];
 
-			xmmsv_dict_format (dur, sizeof (dur),
-			                   "(${minutes}:${seconds})", info_val);
+			xmmsc_entry_format (dur, sizeof (dur),
+			                    "(${minutes}:${seconds})", info_val);
 
 			if (xmmsv_dict_entry_get_string (info_val, "url", &url)) {
 				gchar *filename = g_path_get_basename (url);
@@ -678,7 +646,7 @@ cmd_list (xmmsc_connection_t *conn, gint argc, gchar **argv)
 				}
 			}
 		} else {
-			xmmsv_dict_format (line, sizeof (line), listformat, info_val);
+			xmmsc_entry_format (line, sizeof (line), listformat, info_val);
 		}
 
 		if (p == pos) {
@@ -707,8 +675,6 @@ void
 cmd_move (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	guint cur_pos, new_pos, arg_start;
 	gchar *playlist;
 
@@ -730,9 +696,9 @@ cmd_move (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_move_entry (conn, playlist, cur_pos, new_pos);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Unable to move playlist entry: %s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Unable to move playlist entry: %s",
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 
@@ -744,8 +710,6 @@ void
 cmd_playlist_load (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 4) {
 		print_error ("Supply a playlist name");
@@ -754,9 +718,8 @@ cmd_playlist_load (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_load (conn, argv[3]);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -766,8 +729,6 @@ void
 cmd_playlist_create (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	gchar *playlist_name;
 
 	if (argc < 4) {
@@ -778,9 +739,8 @@ cmd_playlist_create (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_create (conn, playlist_name);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -793,7 +753,6 @@ cmd_playlist_type (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsv_coll_type_t prevtype, newtype;
 	xmmsc_result_t *res;
 	xmmsv_t *val;
-	const char *errmsg;
 	xmmsv_coll_t *coll;
 
 	/* Read playlist name */
@@ -807,8 +766,8 @@ cmd_playlist_type (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	xmmsv_get_coll (val, &coll);
@@ -823,7 +782,6 @@ cmd_playlist_type (xmmsc_connection_t *conn, gint argc, gchar **argv)
 		gint typelen;
 		gint idlistsize;
 		xmmsc_result_t *saveres;
-		xmmsv_t *saveval;
 		xmmsv_coll_t *newcoll;
 		gint i;
 
@@ -864,9 +822,9 @@ cmd_playlist_type (xmmsc_connection_t *conn, gint argc, gchar **argv)
 		saveres = xmmsc_coll_save (conn, newcoll, name, XMMS_COLLECTION_NS_PLAYLISTS);
 		xmmsc_result_wait (saveres);
 
-		saveval = xmmsc_result_get_value (saveres);
-		if (xmmsv_get_error (saveval, &errmsg)) {
-			print_error ("Couldn't save %s : %s", name, errmsg);
+		if (xmmsc_result_iserror (saveres)) {
+			print_error ("Couldn't save %s : %s",
+			             name, xmmsc_result_get_error (saveres));
 		}
 
 		xmmsv_coll_unref (newcoll);
@@ -883,7 +841,6 @@ cmd_playlists_list (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	const gchar *active_name;
 	xmmsc_result_t *res, *active_res;
 	xmmsv_t *val, *active_val;
-	const char *errmsg;
 	xmmsv_list_iter_t *it;
 
 	active_res = xmmsc_playlist_current_active (conn);
@@ -899,8 +856,8 @@ cmd_playlists_list (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	xmmsv_get_list_iter (val, &it);
@@ -950,8 +907,6 @@ void
 cmd_playlist_remove (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 4) {
 		print_error ("Supply a playlist name");
@@ -960,9 +915,8 @@ cmd_playlist_remove (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_playlist_remove (conn, argv[3]);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 
@@ -975,8 +929,6 @@ cmd_addpls (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	gchar *playlist;
 	xmmsc_result_t *res, *res2;
 	xmmsv_t *val;
-	xmmsv_t *val2;
-	const char *errmsg;
 	xmmsv_coll_t *coll;
 	gchar *url;
 
@@ -998,8 +950,8 @@ cmd_addpls (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	if (!xmmsv_get_coll (val, &coll)) {
@@ -1008,9 +960,8 @@ cmd_addpls (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 	res2 = xmmsc_playlist_add_idlist (conn, playlist, coll);
 	xmmsc_result_wait (res2);
-	val2 = xmmsc_result_get_value (res2);
-	if (xmmsv_get_error (val2, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res2)) {
+		print_error ("%s", xmmsc_result_get_error (res2));
 	}
 
 	print_info ("Playlist with %d entries added", xmmsv_coll_idlist_get_size (coll));

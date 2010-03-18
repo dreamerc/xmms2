@@ -31,7 +31,6 @@
 #include "xmmsc/xmmsc_ipc_transport.h"
 #include "xmmsc/xmmsc_util.h"
 #include "url.h"
-#include "socket_unix.h"
 
 static void
 xmms_ipc_usocket_destroy (xmms_ipc_transport_t *ipct)
@@ -83,7 +82,7 @@ xmms_ipc_usocket_client_init (const xmms_url_t *url)
 	}
 
 	saddr.sun_family = AF_UNIX;
-	snprintf (saddr.sun_path, sizeof(saddr.sun_path), "/%s", url->path);
+	snprintf (saddr.sun_path, 108, "/%s", url->path);
 
 	if (connect (fd, (struct sockaddr *) &saddr, sizeof (saddr)) == -1) {
 		close (fd);
@@ -174,7 +173,7 @@ xmms_ipc_usocket_server_init (const xmms_url_t *url)
 	}
 
 	saddr.sun_family = AF_UNIX;
-	snprintf (saddr.sun_path, sizeof (saddr.sun_path), "/%s", url->path);
+	snprintf (saddr.sun_path, 108, "/%s", url->path);
 
 	if (access (saddr.sun_path, F_OK) == 0) {
 		if (connect (fd, (struct sockaddr *) &saddr, sizeof (saddr)) != -1) {

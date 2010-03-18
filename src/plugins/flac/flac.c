@@ -120,11 +120,10 @@ flac_callback_read (const FLAC__StreamDecoder *flacdecoder,
 	xmms_error_t error;
 	gint ret;
 
-#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 	g_return_val_if_fail (xform,
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
 	                      FLAC__SEEKABLE_STREAM_DECODER_READ_STATUS_ERROR);
 #else
-	g_return_val_if_fail (xform,
 	                      FLAC__STREAM_DECODER_READ_STATUS_ABORT);
 #endif
 
@@ -151,7 +150,6 @@ flac_callback_write (const FLAC__StreamDecoder *flacdecoder,
 	guint sample, channel;
 	guint8 packed;
 	guint16 packed16;
-	guint32 packed32;
 
 	data = xmms_xform_private_data_get (xform);
 
@@ -165,14 +163,6 @@ flac_callback_write (const FLAC__StreamDecoder *flacdecoder,
 				case 16:
 					packed16 = (guint16)buffer[channel][sample];
 					g_string_append_len (data->buffer, (gchar *) &packed16, 2);
-					break;
-				case 24:
-					packed32 = ((guint32)(buffer[channel][sample]) << 8);
-					g_string_append_len (data->buffer, (gchar *) &packed32, 4);
-					break;
-				case 32:
-					packed32 = ((guint32)buffer[channel][sample]);
-					g_string_append_len (data->buffer, (gchar *) &packed32, 4);
 					break;
 			}
 		}
@@ -520,17 +510,14 @@ xmms_flac_init (xmms_xform_t *xform)
 		xmms_xform_metadata_set_int (xform, metakey, val);
 	}
 
-	if (data->bits_per_sample == 8) {
-		sample_fmt = XMMS_SAMPLE_FORMAT_S8;
-	} else if (data->bits_per_sample == 16) {
-		sample_fmt = XMMS_SAMPLE_FORMAT_S16;
-	} else if (data->bits_per_sample == 24) {
-		sample_fmt = XMMS_SAMPLE_FORMAT_S32;
-	} else if (data->bits_per_sample == 32) {
-		sample_fmt = XMMS_SAMPLE_FORMAT_S32;
-	} else {
+	if (data->bits_per_sample != 8 && data->bits_per_sample != 16) {
 		goto err;
 	}
+
+	if (data->bits_per_sample == 8)
+		sample_fmt = XMMS_SAMPLE_FORMAT_S8;
+	else
+		sample_fmt = XMMS_SAMPLE_FORMAT_S16;
 
 	xmms_xform_outdata_type_add (xform,
 	                             XMMS_STREAM_TYPE_MIMETYPE,

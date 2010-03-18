@@ -99,7 +99,6 @@ cmd_info (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
 	xmmsv_t *val;
-	const char *errmsg;
 	gint id;
 
 	if (argc > 2) {
@@ -112,8 +111,8 @@ cmd_info (xmmsc_connection_t *conn, gint argc, gchar **argv)
 			xmmsc_result_wait (res);
 			val = xmmsc_result_get_value (res);
 
-			if (xmmsv_get_error (val, &errmsg)) {
-				print_error ("%s", errmsg);
+			if (xmmsv_is_error (val)) {
+				print_error ("%s", xmmsv_get_error_old (val));
 			}
 
 			xmmsv_dict_foreach (val, print_entry, val);
@@ -125,8 +124,8 @@ cmd_info (xmmsc_connection_t *conn, gint argc, gchar **argv)
 		xmmsc_result_wait (res);
 		val = xmmsc_result_get_value (res);
 
-		if (xmmsv_get_error (val, &errmsg)) {
-			print_error ("%s", errmsg);
+		if (xmmsv_is_error (val)) {
+			print_error ("%s", xmmsv_get_error_old (val));
 		}
 
 		if (!xmmsv_get_int (val, &id)) {
@@ -138,8 +137,8 @@ cmd_info (xmmsc_connection_t *conn, gint argc, gchar **argv)
 		xmmsc_result_wait (res);
 		val = xmmsc_result_get_value (res);
 
-		if (xmmsv_get_error (val, &errmsg)) {
-			print_error ("%s", errmsg);
+		if (xmmsv_is_error (val)) {
+			print_error ("%s", xmmsv_get_error_old (val));
 		}
 
 		xmmsv_dict_foreach (val, print_entry, val);
@@ -151,8 +150,6 @@ static void
 cmd_mlib_set_str (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	gint id;
 
 	if (argc < 6) {
@@ -173,9 +170,8 @@ cmd_mlib_set_str (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	}
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 
 	xmmsc_result_unref (res);
@@ -185,8 +181,6 @@ static void
 cmd_mlib_set_int (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	gint id;
 
 	if (argc < 6) {
@@ -207,9 +201,8 @@ cmd_mlib_set_int (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	}
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 
 	xmmsc_result_unref (res);
@@ -219,8 +212,6 @@ static void
 cmd_mlib_rmprop (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	gint id;
 
 	if (argc < 5) {
@@ -242,9 +233,8 @@ cmd_mlib_rmprop (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 
 	xmmsc_result_unref (res);
@@ -254,8 +244,6 @@ static void
 cmd_mlib_add (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	gint i;
 
 	for (i = 3; argv[i]; i++) {
@@ -267,9 +255,8 @@ cmd_mlib_add (xmmsc_connection_t *conn, gint argc, gchar **argv)
 			xmmsc_result_wait (res);
 			g_free (url);
 
-			val = xmmsc_result_get_value (res);
-			if (xmmsv_get_error (val, &errmsg)) {
-				print_error ("%s", errmsg);
+			if (xmmsc_result_iserror (res)) {
+				print_error ("%s", xmmsc_result_get_error (res));
 			}
 
 			print_info ("Added %s to medialib", argv[i]);
@@ -284,8 +271,6 @@ cmd_mlib_loadall (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	gchar *playlist = NULL;
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	xmmsv_coll_t *all = xmmsv_coll_universe ();
 	xmmsv_t *empty = xmmsv_new_list ();
 
@@ -300,9 +285,8 @@ cmd_mlib_loadall (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsv_coll_unref (all);
 	xmmsv_unref (empty);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -312,8 +296,6 @@ static void
 cmd_mlib_searchadd (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	xmmsv_coll_t *query;
 	gchar *pattern;
 	gchar **args;
@@ -348,9 +330,8 @@ cmd_mlib_searchadd (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsv_coll_unref (query);
 	xmmsv_unref (empty);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -360,7 +341,6 @@ cmd_mlib_search (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
 	xmmsv_t *val;
-	const char *errmsg;
 	xmmsv_list_iter_t *it;
 	GList *n = NULL;
 	xmmsv_coll_t *query;
@@ -395,8 +375,8 @@ cmd_mlib_search (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsv_coll_unref (query);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	xmmsv_get_list_iter (val, &it);
@@ -424,8 +404,6 @@ static void
 cmd_mlib_addpath (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	gint i;
 
 	if (argc < 4) {
@@ -441,14 +419,14 @@ cmd_mlib_addpath (xmmsc_connection_t *conn, gint argc, gchar **argv)
 			continue;
 		}
 
-		res = xmmsc_medialib_import_path (conn, rfile);
+		res = xmmsc_medialib_path_import (conn, rfile);
 		g_free (rfile);
 
 		xmmsc_result_wait (res);
 
-		val = xmmsc_result_get_value (res);
-		if (xmmsv_get_error (val, &errmsg)) {
-			print_info ("Cannot add path '%s': %s", argv[i], errmsg);
+		if (xmmsc_result_iserror (res)) {
+			print_info ("Cannot add path '%s': %s",
+			            argv[i], xmmsc_result_get_error (res));
 		}
 
 		xmmsc_result_unref (res);
@@ -461,8 +439,6 @@ cmd_mlib_remove (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	int i;
 	int32_t entryid;
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 4) {
 		print_error ("Supply an id to remove!");
@@ -473,9 +449,8 @@ cmd_mlib_remove (xmmsc_connection_t *conn, gint argc, gchar **argv)
 		print_info ("Removing entry %i", entryid);
 		res = xmmsc_medialib_remove_entry (conn, entryid);
 		xmmsc_result_wait (res);
-		val = xmmsc_result_get_value (res);
-		if (xmmsv_get_error (val, &errmsg)) {
-			print_error ("%s", errmsg);
+		if (xmmsc_result_iserror (res)) {
+			print_error ("%s", xmmsc_result_get_error (res));
 		}
 		xmmsc_result_unref (res);
 	}
@@ -485,8 +460,6 @@ static void
 cmd_mlib_rehash (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	guint id = 0;
 
 	if (argc < 4) {
@@ -498,9 +471,8 @@ cmd_mlib_rehash (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	res = xmmsc_medialib_rehash (conn, id);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -510,7 +482,6 @@ cmd_mlib_addcover (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
 	xmmsv_t *val;
-	const char *errmsg;
 	const gchar *filename;
 	GIOChannel* io = NULL;
 	GError *error = NULL;
@@ -549,8 +520,8 @@ cmd_mlib_addcover (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 		g_free (contents);
 
-		if (xmmsv_get_error (val, &errmsg)) {
-			print_error ("%s", errmsg);
+		if (xmmsv_is_error (val)) {
+			print_error ("%s", xmmsv_get_error_old (val));
 		}
 
 		if (!xmmsv_get_string (val, &hash)) {
@@ -559,7 +530,6 @@ cmd_mlib_addcover (xmmsc_connection_t *conn, gint argc, gchar **argv)
 
 		for (id_arg = argv + 4; id_arg < argv + argc; ++id_arg) {
 			xmmsc_result_t *res2;
-			xmmsv_t *val2;
 			uint32_t id;
 			gchar *end;
 
@@ -572,9 +542,8 @@ cmd_mlib_addcover (xmmsc_connection_t *conn, gint argc, gchar **argv)
 			res2 = xmmsc_medialib_entry_property_set_str (conn, id, "picture_front", hash);
 			xmmsc_result_wait (res2);
 
-			val2 = xmmsc_result_get_value (res2);
-			if (xmmsv_get_error (val2, &errmsg)) {
-				print_info ("%s", errmsg);
+			if (xmmsc_result_iserror (res2)) {
+				print_info ("%s", xmmsc_result_get_error (res2));
 			}
 			xmmsc_result_unref (res2);
 		}

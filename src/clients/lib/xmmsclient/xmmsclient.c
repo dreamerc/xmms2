@@ -123,12 +123,13 @@ xmmsc_init (const char *clientname)
 static xmmsc_result_t *
 xmmsc_send_hello (xmmsc_connection_t *c)
 {
-	const int protocol_version = XMMS_IPC_PROTOCOL_VERSION;
+	xmms_ipc_msg_t *msg;
 
-	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_MAIN, XMMS_IPC_CMD_HELLO,
-	                       XMMSV_LIST_ENTRY_INT (protocol_version),
-	                       XMMSV_LIST_ENTRY_STR (c->clientname),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MAIN, XMMS_IPC_CMD_HELLO);
+	xmms_ipc_msg_put_int32 (msg, XMMS_IPC_PROTOCOL_VERSION);
+	xmms_ipc_msg_put_string (msg, c->clientname);
+
+	return xmmsc_send_msg (c, msg);
 }
 
 /**
@@ -161,7 +162,7 @@ xmmsc_connect (xmmsc_connection_t *c, const char *ipcpath)
 	x_api_error_if (!c, "with a NULL connection", false);
 
 	if (!ipcpath) {
-		if (!xmms_default_ipcpath_get (c->path, sizeof (c->path))) {
+		if (!xmms_default_ipcpath_get (c->path, PATH_MAX)) {
 			return false;
 		}
 	} else {
@@ -350,9 +351,15 @@ xmmsc_write_msg_to_ipc (xmmsc_connection_t *c, xmms_ipc_msg_t *msg)
 xmmsc_result_t *
 xmmsc_send_broadcast_msg (xmmsc_connection_t *c, int signalid)
 {
-	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_SIGNAL, XMMS_IPC_CMD_BROADCAST,
-	                       XMMSV_LIST_ENTRY_INT (signalid),
-	                       XMMSV_LIST_END);
+	xmms_ipc_msg_t *msg;
+	xmmsc_result_t *res;
+
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_SIGNAL, XMMS_IPC_CMD_BROADCAST);
+	xmms_ipc_msg_put_int32 (msg, signalid);
+
+	res = xmmsc_send_msg (c, msg);
+
+	return res;
 }
 
 
@@ -360,16 +367,10 @@ uint32_t
 xmmsc_write_signal_msg (xmmsc_connection_t *c, int signalid)
 {
 	xmms_ipc_msg_t *msg;
-	xmmsv_t *args;
 	uint32_t cookie;
 
 	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_SIGNAL, XMMS_IPC_CMD_SIGNAL);
-
-	args = xmmsv_build_list (XMMSV_LIST_ENTRY_INT (signalid),
-	                         XMMSV_LIST_END);
-
-	xmms_ipc_msg_put_value (msg, args);
-	xmmsv_unref (args);
+	xmms_ipc_msg_put_int32 (msg, signalid);
 
 	cookie = xmmsc_write_msg_to_ipc (c, msg);
 
@@ -379,10 +380,13 @@ xmmsc_write_signal_msg (xmmsc_connection_t *c, int signalid)
 xmmsc_result_t *
 xmmsc_send_signal_msg (xmmsc_connection_t *c, int signalid)
 {
+	xmms_ipc_msg_t *msg;
 	xmmsc_result_t *res;
 
-	res = xmmsc_send_cmd (c, XMMS_IPC_OBJECT_SIGNAL, XMMS_IPC_CMD_SIGNAL,
-	                      XMMSV_LIST_ENTRY_INT (signalid), XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_SIGNAL, XMMS_IPC_CMD_SIGNAL);
+	xmms_ipc_msg_put_int32 (msg, signalid);
+
+	res = xmmsc_send_msg (c, msg);
 
 	xmmsc_result_restartable (res, signalid);
 
@@ -394,13 +398,8 @@ xmmsc_send_msg_no_arg (xmmsc_connection_t *c, int object, int method)
 {
 	uint32_t cookie;
 	xmms_ipc_msg_t *msg;
-	xmmsv_t *args;
 
 	msg = xmms_ipc_msg_new (object, method);
-
-	args = xmmsv_new_list ();
-	xmms_ipc_msg_put_value (msg, args);
-	xmmsv_unref (args);
 
 	cookie = xmmsc_write_msg_to_ipc (c, msg);
 
@@ -415,36 +414,19 @@ xmmsc_send_msg (xmmsc_connection_t *c, xmms_ipc_msg_t *msg)
 
 	cookie = xmmsc_write_msg_to_ipc (c, msg);
 
-	type = XMMSC_RESULT_CLASS_DEFAULT;
-	if (xmms_ipc_msg_get_object (msg) == XMMS_IPC_OBJECT_SIGNAL) {
-		if (xmms_ipc_msg_get_cmd (msg) == XMMS_IPC_CMD_SIGNAL) {
+	switch (xmms_ipc_msg_get_cmd (msg)) {
+		case XMMS_IPC_CMD_SIGNAL:
 			type = XMMSC_RESULT_CLASS_SIGNAL;
-		} else if (xmms_ipc_msg_get_cmd (msg) == XMMS_IPC_CMD_BROADCAST) {
+			break;
+		case XMMS_IPC_CMD_BROADCAST:
 			type = XMMSC_RESULT_CLASS_BROADCAST;
-		}
+			break;
+		default:
+			type = XMMSC_RESULT_CLASS_DEFAULT;
+			break;
 	}
 
 	return xmmsc_result_new (c, type, cookie);
-}
-
-xmmsc_result_t *
-xmmsc_send_cmd (xmmsc_connection_t *c, int obj, int cmd,
-                xmmsv_t *first_arg, ...)
-{
-	xmms_ipc_msg_t *msg;
-	xmmsv_t *args;
-	va_list ap;
-
-	msg = xmms_ipc_msg_new (obj, cmd);
-
-	va_start (ap, first_arg);
-	args = xmmsv_build_list_va (first_arg, ap);
-	va_end (ap);
-
-	xmms_ipc_msg_put_value (msg, args);
-	xmmsv_unref (args);
-
-	return xmmsc_send_msg (c, msg);
 }
 
 /**
@@ -571,3 +553,20 @@ xmmsc_io_disconnect (xmmsc_connection_t *c)
 /**
  * @}
  */
+
+void xmms_log_debug (const char *fmt, ...)
+{
+	char buff[1024];
+	va_list ap;
+
+	va_start (ap, fmt);
+#ifdef HAVE_VSNPRINTF
+	vsnprintf (buff, 1024, fmt, ap);
+#else
+	vsprintf (buff, fmt, ap);
+#endif
+	va_end (ap);
+
+	fprintf (stderr, "%s\n", buff);
+}
+

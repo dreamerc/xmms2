@@ -124,7 +124,9 @@ xmms_avcodec_destroy (xmms_xform_t *xform)
 
 	g_string_free (data->outbuf, TRUE);
 	g_free (data->buffer);
-	g_free (data->extradata);
+	if (data->no_demuxer) {
+		g_free (data->extradata);
+	}
 	g_free (data);
 }
 
@@ -134,8 +136,6 @@ xmms_avcodec_init (xmms_xform_t *xform)
 	xmms_avcodec_data_t *data;
 	AVCodec *codec;
 	const gchar *mimetype;
-	const guchar *tmpbuf;
-	gssize tmpbuflen;
 	gint ret;
 
 	g_return_val_if_fail (xform, FALSE);
@@ -188,13 +188,12 @@ xmms_avcodec_init (xmms_xform_t *xform)
 	                            "block_align",
 	                            &data->block_align);
 
-	ret = xmms_xform_auxdata_get_bin (xform, "decoder_config",
-	                                  &tmpbuf, &tmpbuflen);
+	ret = xmms_xform_auxdata_get_bin (xform,
+	                                  "decoder_config",
+	                                  &data->extradata,
+	                                  &data->extradata_size);
 
-	if (ret) {
-		data->extradata = g_memdup (tmpbuf, tmpbuflen);
-		data->extradata_size = tmpbuflen;
-	} else {
+	if (!ret) {
 		/* This should be a list of known formats that don't have a
 		 * demuxer so they will be handled slightly differently... */
 		if (!strcmp (data->codec_id, "shorten") ||
@@ -258,7 +257,9 @@ xmms_avcodec_init (xmms_xform_t *xform)
 
 err:
 	g_string_free (data->outbuf, TRUE);
-	g_free (data->extradata);
+	if (data->no_demuxer) {
+		g_free (data->extradata);
+	}
 	g_free (data);
 
 	return FALSE;

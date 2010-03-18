@@ -15,6 +15,7 @@
 #include "xmms/xmms_log.h"
 #include "xmms/xmms_xformplugin.h"
 #include "xmms/xmms_bindata.h"
+#include "xmms/xmms_strfunc.h"
 #include "id3.h"
 
 #include <glib.h>

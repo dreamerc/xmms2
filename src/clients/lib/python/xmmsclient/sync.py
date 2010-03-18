@@ -32,7 +32,7 @@ class XMMSSync:
                 if isinstance(ret, xmmsapi.XMMSResult):
                     ret.wait()
                     if ret.iserror():
-                        raise XMMSError(ret.value())
+                        raise XMMSError(ret.get_error())
                     return ret.value()
                 return ret
             try:

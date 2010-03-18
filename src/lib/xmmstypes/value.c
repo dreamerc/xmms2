@@ -66,7 +66,6 @@ static int xmmsv_list_resize (xmmsv_list_t *l, int newsize);
 static int _xmmsv_list_insert (xmmsv_list_t *l, int pos, xmmsv_t *val);
 static int _xmmsv_list_append (xmmsv_list_t *l, xmmsv_t *val);
 static int _xmmsv_list_remove (xmmsv_list_t *l, int pos);
-static int _xmmsv_list_move (xmmsv_list_t *l, int old_pos, int new_pos);
 static void _xmmsv_list_clear (xmmsv_list_t *l);
 
 static xmmsv_dict_t *xmmsv_dict_new (void);
@@ -509,8 +508,8 @@ xmmsv_dict_entry_get_type (xmmsv_t *val, const char *key)
 }
 
 
-/* macro-magically define dict extractors */
-#define GEN_DICT_EXTRACTOR_FUNC(typename, type)			\
+/* macro-magically define legacy dict extractors */
+#define GEN_COMPAT_DICT_EXTRACTOR_FUNC(typename, type)			\
 	int								\
 	xmmsv_dict_entry_get_##typename (xmmsv_t *val, const char *key, \
 	                                 type *r)			\
@@ -522,177 +521,9 @@ xmmsv_dict_entry_get_type (xmmsv_t *val, const char *key)
 		return xmmsv_get_##typename (v, r);			\
 	}
 
-GEN_DICT_EXTRACTOR_FUNC (string, const char *)
-GEN_DICT_EXTRACTOR_FUNC (int, int32_t)
-GEN_DICT_EXTRACTOR_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define dict set functions */
-#define GEN_DICT_SET_FUNC(typename, type) \
-	int \
-	xmmsv_dict_set_##typename (xmmsv_t *dict, const char *key, type elem) \
-	{ \
-		int ret; \
-		xmmsv_t *v; \
- \
-		v = xmmsv_new_##typename (elem); \
-		ret = xmmsv_dict_set (dict, key, v); \
-		xmmsv_unref (v); \
- \
-		return ret; \
-	}
-
-GEN_DICT_SET_FUNC (string, const char *)
-GEN_DICT_SET_FUNC (int, int32_t)
-GEN_DICT_SET_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define dict_iter extractors */
-#define GEN_DICT_ITER_EXTRACTOR_FUNC(typename, type) \
-	int \
-	xmmsv_dict_iter_pair_##typename (xmmsv_dict_iter_t *it, \
-	                                 const char **key, \
-	                                 type *r) \
-	{ \
-		xmmsv_t *v; \
-		if (!xmmsv_dict_iter_pair (it, key, &v)) { \
-			return 0; \
-		} \
-		if (r) { \
-			return xmmsv_get_##typename (v, r); \
-		} else { \
-			return 1; \
-		} \
-	}
-
-GEN_DICT_ITER_EXTRACTOR_FUNC (string, const char *)
-GEN_DICT_ITER_EXTRACTOR_FUNC (int, int32_t)
-GEN_DICT_ITER_EXTRACTOR_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define dict_iter set functions */
-#define GEN_DICT_ITER_SET_FUNC(typename, type) \
-	int \
-	xmmsv_dict_iter_set_##typename (xmmsv_dict_iter_t *it, type elem) \
-	{ \
-		int ret; \
-		xmmsv_t *v; \
- \
-		v = xmmsv_new_##typename (elem); \
-		ret = xmmsv_dict_iter_set (it, v); \
-		xmmsv_unref (v); \
- \
-		return ret; \
-	}
-
-GEN_DICT_ITER_SET_FUNC (string, const char *)
-GEN_DICT_ITER_SET_FUNC (int, int32_t)
-GEN_DICT_ITER_SET_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define list extractors */
-#define GEN_LIST_EXTRACTOR_FUNC(typename, type) \
-	int \
-	xmmsv_list_get_##typename (xmmsv_t *val, int pos, type *r) \
-	{ \
-		xmmsv_t *v; \
-		if (!xmmsv_list_get (val, pos, &v)) { \
-			return 0; \
-		} \
-		return xmmsv_get_##typename (v, r); \
-	}
-
-GEN_LIST_EXTRACTOR_FUNC (string, const char *)
-GEN_LIST_EXTRACTOR_FUNC (int, int32_t)
-GEN_LIST_EXTRACTOR_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define list set functions */
-#define GEN_LIST_SET_FUNC(typename, type) \
-	int \
-	xmmsv_list_set_##typename (xmmsv_t *list, int pos, type elem) \
-	{ \
-		int ret; \
-		xmmsv_t *v; \
- \
-		v = xmmsv_new_##typename (elem); \
-		ret = xmmsv_list_set (list, pos, v); \
-		xmmsv_unref (v); \
- \
-		return ret; \
-	}
-
-GEN_LIST_SET_FUNC (string, const char *)
-GEN_LIST_SET_FUNC (int, int32_t)
-GEN_LIST_SET_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define list insert functions */
-#define GEN_LIST_INSERT_FUNC(typename, type) \
-	int \
-	xmmsv_list_insert_##typename (xmmsv_t *list, int pos, type elem) \
-	{ \
-		int ret; \
-		xmmsv_t *v; \
- \
-		v = xmmsv_new_##typename (elem); \
-		ret = xmmsv_list_insert (list, pos, v); \
-		xmmsv_unref (v); \
- \
-		return ret; \
-	}
-
-GEN_LIST_INSERT_FUNC (string, const char *)
-GEN_LIST_INSERT_FUNC (int, int32_t)
-GEN_LIST_INSERT_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define list append functions */
-#define GEN_LIST_APPEND_FUNC(typename, type) \
-	int \
-	xmmsv_list_append_##typename (xmmsv_t *list, type elem) \
-	{ \
-		int ret; \
-		xmmsv_t *v; \
- \
-		v = xmmsv_new_##typename (elem); \
-		ret = xmmsv_list_append (list, v); \
-		xmmsv_unref (v); \
- \
-		return ret; \
-	}
-
-GEN_LIST_APPEND_FUNC (string, const char *)
-GEN_LIST_APPEND_FUNC (int, int32_t)
-GEN_LIST_APPEND_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define list_iter extractors */
-#define GEN_LIST_ITER_EXTRACTOR_FUNC(typename, type) \
-	int \
-	xmmsv_list_iter_entry_##typename (xmmsv_list_iter_t *it, type *r) \
-	{ \
-		xmmsv_t *v; \
-		if (!xmmsv_list_iter_entry (it, &v)) { \
-			return 0; \
-		} \
-		return xmmsv_get_##typename (v, r); \
-	}
-
-GEN_LIST_ITER_EXTRACTOR_FUNC (string, const char *)
-GEN_LIST_ITER_EXTRACTOR_FUNC (int, int32_t)
-GEN_LIST_ITER_EXTRACTOR_FUNC (coll, xmmsv_coll_t *)
-
-/* macro-magically define list_iter insert functions */
-#define GEN_LIST_ITER_INSERT_FUNC(typename, type) \
-	int \
-	xmmsv_list_iter_insert_##typename (xmmsv_list_iter_t *it, type elem) \
-	{ \
-		int ret; \
-		xmmsv_t *v; \
- \
-		v = xmmsv_new_##typename (elem); \
-		ret = xmmsv_list_iter_insert (it, v); \
-		xmmsv_unref (v); \
- \
-		return ret; \
-	}
-
-GEN_LIST_ITER_INSERT_FUNC (string, const char *)
-GEN_LIST_ITER_INSERT_FUNC (int, int32_t)
-GEN_LIST_ITER_INSERT_FUNC (coll, xmmsv_coll_t *)
+GEN_COMPAT_DICT_EXTRACTOR_FUNC (string, const char *)
+GEN_COMPAT_DICT_EXTRACTOR_FUNC (int, int32_t)
+GEN_COMPAT_DICT_EXTRACTOR_FUNC (coll, xmmsv_coll_t *)
 
 static int
 source_match_pattern (const char *source, const char *pattern)
@@ -1116,58 +947,6 @@ _xmmsv_list_remove (xmmsv_list_t *l, int pos)
 	return 1;
 }
 
-static int
-_xmmsv_list_move (xmmsv_list_t *l, int old_pos, int new_pos)
-{
-	xmmsv_t *v;
-	xmmsv_list_iter_t *it;
-	x_list_t *n;
-
-	if (!absolutify_and_validate_pos (&old_pos, l->size, 0)) {
-		return 0;
-	}
-	if (!absolutify_and_validate_pos (&new_pos, l->size, 0)) {
-		return 0;
-	}
-
-	v = l->list[old_pos];
-	if (old_pos < new_pos) {
-		memmove (l->list + old_pos, l->list + old_pos + 1,
-		         (new_pos - old_pos) * sizeof (xmmsv_t *));
-		l->list[new_pos] = v;
-
-		/* update iterator pos */
-		for (n = l->iterators; n; n = n->next) {
-			it = (xmmsv_list_iter_t *) n->data;
-			if (it->position >= old_pos && it->position <= new_pos) {
-				if (it->position == old_pos) {
-					it->position = new_pos;
-				} else {
-					it->position--;
-				}
-			}
-		}
-	} else {
-		memmove (l->list + new_pos + 1, l->list + new_pos,
-		         (old_pos - new_pos) * sizeof (xmmsv_t *));
-		l->list[new_pos] = v;
-
-		/* update iterator pos */
-		for (n = l->iterators; n; n = n->next) {
-			it = (xmmsv_list_iter_t *) n->data;
-			if (it->position >= new_pos && it->position <= old_pos) {
-				if (it->position == old_pos) {
-					it->position = new_pos;
-				} else {
-					it->position++;
-				}
-			}
-		}
-	}
-
-	return 1;
-}
-
 static void
 _xmmsv_list_clear (xmmsv_list_t *l)
 {
@@ -1295,29 +1074,6 @@ xmmsv_list_remove (xmmsv_t *listv, int pos)
 	x_return_val_if_fail (xmmsv_is_type (listv, XMMSV_TYPE_LIST), 0);
 
 	return _xmmsv_list_remove (listv->value.list, pos);
-}
-
-/**
- * Move the element from position #old to position #new.
- *
- * #xmmsv_list_iter_t's remain pointing at their element (which might or might
- * not be at a different position).
- *
- * @param listv A #xmmsv_t containing a list
- * @param old The original position in the list. If negative, start counting
- *            from the end (-1 is the last element, etc.)
- * @param new The new position in the list. If negative start counting from the
- *            end (-1 is the last element, etc.) For the sake of counting the
- *            element to be moved is still at its old position.
- * @return 1 upon success otherwise 0
- */
-int
-xmmsv_list_move (xmmsv_t *listv, int old_pos, int new_pos)
-{
-	x_return_val_if_fail (listv, 0);
-	x_return_val_if_fail (xmmsv_is_type (listv, XMMSV_TYPE_LIST), 0);
-
-	return _xmmsv_list_move (listv->value.list, old_pos, new_pos);
 }
 
 /**
@@ -1647,6 +1403,7 @@ xmmsv_list_iter_remove (xmmsv_list_iter_t *it)
 
 	return _xmmsv_list_remove (it->parent, it->position);
 }
+
 
 /* Dict stuff */
 
@@ -2239,46 +1996,6 @@ xmmsv_build_dict (const char *firstkey, ...)
 
 	return res;
 }
-
-xmmsv_t *
-xmmsv_build_list_va (xmmsv_t *first_entry, va_list ap)
-{
-	xmmsv_t *val, *res;
-
-	res = xmmsv_new_list ();
-	if (!res)
-		return NULL;
-
-	val = first_entry;
-
-	while (val) {
-		if (!xmmsv_list_append (res, val)) {
-			xmmsv_unref (res);
-			res = NULL;
-			break;
-		}
-
-		xmmsv_unref (val);
-
-		val = va_arg (ap, xmmsv_t *);
-	}
-
-	return res;
-}
-
-xmmsv_t *
-xmmsv_build_list (xmmsv_t *first_entry, ...)
-{
-	va_list ap;
-	xmmsv_t *res;
-
-	va_start (ap, first_entry);
-	res = xmmsv_build_list_va (first_entry, ap);
-	va_end (ap);
-
-	return res;
-}
-
 
 /**
  * This function will make a pretty string about the information in

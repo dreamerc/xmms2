@@ -18,7 +18,7 @@
 #include "daap_mdns_browse.h"
 
 gboolean
-daap_mdns_setup ()
+daap_mdns_initialize ()
 {
 	return FALSE;
 }

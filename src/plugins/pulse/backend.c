@@ -35,11 +35,9 @@ static struct {
                                        WORDS_BIGENDIAN is correctly
                                        defined */
 	{XMMS_SAMPLE_FORMAT_S16, PA_SAMPLE_S16LE},
-	{XMMS_SAMPLE_FORMAT_S32, PA_SAMPLE_S32LE},
 	{XMMS_SAMPLE_FORMAT_FLOAT, PA_SAMPLE_FLOAT32LE},
 #else
 	{XMMS_SAMPLE_FORMAT_S16, PA_SAMPLE_S16BE},
-	{XMMS_SAMPLE_FORMAT_S32, PA_SAMPLE_S32BE},
 	{XMMS_SAMPLE_FORMAT_FLOAT, PA_SAMPLE_FLOAT32BE},
 #endif
 };
@@ -224,6 +222,7 @@ gboolean xmms_pulse_backend_set_stream (xmms_pulse *p, const char *stream_name,
                                         int *rerror)
 {
 	pa_sample_format_t pa_format = PA_SAMPLE_INVALID;
+	pa_cvolume cvol;
 	int error = PA_ERR_INTERNAL;
 	int ret;
 	int i;
@@ -269,9 +268,12 @@ gboolean xmms_pulse_backend_set_stream (xmms_pulse *p, const char *stream_name,
 	pa_stream_set_write_callback (p->stream, stream_request_cb, p);
 	pa_stream_set_latency_update_callback (p->stream, stream_latency_update_cb, p);
 
+	pa_cvolume_set (&cvol, p->sample_spec.channels,
+	                PA_VOLUME_NORM * p->volume / 100);
+
 	ret = pa_stream_connect_playback (p->stream, sink, NULL,
 	                                  PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE,
-	                                  NULL, NULL);
+	                                  &cvol, NULL);
 
 	if (ret < 0) {
 		error = pa_context_errno (p->context);
@@ -489,7 +491,7 @@ int xmms_pulse_backend_get_latency (xmms_pulse *p, int *rerror)
 }
 
 
-static void volume_set_cb (pa_context *c, int success, void *udata)
+void volume_set_cb (pa_context *c, int success, void *udata)
 {
 	int *res = (int *) udata;
 	*res = success;
@@ -538,8 +540,8 @@ int xmms_pulse_backend_volume_set (xmms_pulse *p, unsigned int vol)
 }
 
 
-static void volume_get_cb (pa_context *c, const pa_sink_input_info *i,
-                           int eol, void *udata)
+void volume_get_cb (pa_context *c, const pa_sink_input_info *i,
+                   int eol, void *udata)
 {
 	unsigned int *vol = (unsigned int *) udata;
 	double total = 0;

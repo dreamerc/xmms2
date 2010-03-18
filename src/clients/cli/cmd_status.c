@@ -26,7 +26,7 @@ static int handle_playtime (xmmsv_t *res, void *userdata);
 static int handle_mediainfo_update (xmmsv_t *res, void *userdata);
 static int handle_status_change (xmmsv_t *res, void *userdata);
 static int do_mediainfo (xmmsv_t *res, void *userdata);
-static void update_display (void);
+static void update_display ();
 static void quit (void *data);
 
 
@@ -89,14 +89,13 @@ cmd_current (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsv_t *propdict, *val;
 	gchar print_text[256];
 	gint id;
-	const char *errmsg;
 
 	res = xmmsc_playback_current_id (conn);
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	if (!xmmsv_get_int (val, &id)) {
@@ -115,15 +114,15 @@ cmd_current (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	propdict = xmmsc_result_get_value (res);
 	val = xmmsv_propdict_to_dict (propdict, NULL);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	if (argc > 2) {
-		xmmsv_dict_format (print_text, sizeof (print_text), argv[2], val);
+		xmmsc_entry_format (print_text, sizeof (print_text), argv[2], val);
 	} else {
-		xmmsv_dict_format (print_text, sizeof (print_text),
-		                   "${artist} - ${title}", val);
+		xmmsc_entry_format (print_text, sizeof (print_text),
+		                    "${artist} - ${title}", val);
 	}
 
 	xmmsv_unref (val);
@@ -136,10 +135,9 @@ static int
 handle_status_change (xmmsv_t *val, void *userdata)
 {
 	gint new_status;
-	const char *errmsg;
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	if (!xmmsv_get_int (val, &new_status)) {
@@ -157,10 +155,9 @@ handle_current_id (xmmsv_t *val, void *userdata)
 {
 	xmmsc_result_t *res;
 	xmmsc_connection_t *conn = userdata;
-	const char *errmsg;
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	if (!xmmsv_get_int (val, &current_id)) {
@@ -182,10 +179,9 @@ static int
 handle_playtime (xmmsv_t *val, void *userdata)
 {
 	gint dur;
-	const char *errmsg;
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	if (!xmmsv_get_int (val, &dur)) {
@@ -204,7 +200,7 @@ handle_playtime (xmmsv_t *val, void *userdata)
 	return TRUE;
 }
 
-static void update_display (void)
+static void update_display ()
 {
 	gchar *conv;
 	gsize r, w;
@@ -247,10 +243,9 @@ handle_mediainfo_update (xmmsv_t *val, void *userdata)
 	gint id;
 	xmmsc_result_t *res;
 	xmmsc_connection_t *conn = userdata;
-	const char *errmsg;
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	if (!xmmsv_get_int (val, &id)) {
@@ -271,23 +266,22 @@ static int
 do_mediainfo (xmmsv_t *propdict, void *userdata)
 {
 	xmmsv_t *val;
-	const char *errmsg;
 
-	if (xmmsv_get_error (propdict, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (propdict)) {
+		print_error ("%s", xmmsv_get_error_old (propdict));
 	}
 
 	val = xmmsv_propdict_to_dict (propdict, NULL);
 
 	print_info ("");
-	if (xmmsv_dict_has_key (val, "channel") && xmmsv_dict_has_key (val, "title")) {
-		xmmsv_dict_format (songname, sizeof (songname),
-		                   "[stream] ${title}", val);
+	if (val_has_key (val, "channel") && val_has_key (val, "title")) {
+		xmmsc_entry_format (songname, sizeof (songname),
+		                    "[stream] ${title}", val);
 		has_songname = TRUE;
-	} else if (xmmsv_dict_has_key (val, "channel")) {
-		xmmsv_dict_format (songname, sizeof (songname), "${channel}", val);
+	} else if (val_has_key (val, "channel")) {
+		xmmsc_entry_format (songname, sizeof (songname), "${channel}", val);
 		has_songname = TRUE;
-	} else if (!xmmsv_dict_has_key (val, "title")) {
+	} else if (!val_has_key (val, "title")) {
 		const gchar *url;
 
 		if (xmmsv_dict_entry_get_string (val, "url", &url)) {
@@ -300,8 +294,8 @@ do_mediainfo (xmmsv_t *propdict, void *userdata)
 			}
 		}
 	} else {
-		xmmsv_dict_format (songname, sizeof (songname),
-		                   statusformat, val);
+		xmmsc_entry_format (songname, sizeof (songname),
+		                    statusformat, val);
 		has_songname = TRUE;
 	}
 

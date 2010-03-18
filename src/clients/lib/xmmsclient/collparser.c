@@ -253,7 +253,7 @@ xmmsv_coll_default_parse_tokens (const char *str, const char **newpos)
 		tmp++;
 		strval = x_new0 (char, strlen (tmp) + 1);
 
-		while (*tmp != '\0' && (escape || *tmp != quote)) {
+		while (escape || (*tmp != '\0' && *tmp != quote)) {
 			if (!escape && (*tmp == '\\')) {
 				escape = 1;
 			} else {
@@ -271,15 +271,14 @@ xmmsv_coll_default_parse_tokens (const char *str, const char **newpos)
 		if (*tmp == quote) tmp++;
 
 		*newpos = tmp;
-
-		goto out;
+		return coll_token_new (type, strval);
 	}
 
 
 	i = 0;
 	type = XMMS_COLLECTION_TOKEN_INTEGER;
 	strval = x_new0 (char, strlen (tmp) + 1);
-	while (*tmp != '\0' && (escape || *tmp != ' ')) {
+	while (escape || (*tmp != '\0' && *tmp != ' ')) {
 
 		/* Control input chars, escape mechanism, etc */
 		if (!escape) {
@@ -341,16 +340,6 @@ xmmsv_coll_default_parse_tokens (const char *str, const char **newpos)
 	}
 
 	*newpos = tmp;
-
-out:
-
-	/* Did we encounter a trailing backslash? */
-	if (escape) {
-		free (strval);
-
-		return NULL;
-	}
-
 	return coll_token_new (type, strval);
 }
 
@@ -846,16 +835,6 @@ coll_parse_filter (xmmsv_coll_token_t *tokens, xmmsv_coll_t **ret)
 
 	PARSER_TRY (coll_parse_unaryfilter);
 	PARSER_TRY (coll_parse_binaryfilter);
-
-	/* Recognize a seperate '*' as the universe collection */
-	/* FIXME: This should not be in this function!
-	   See bug report 2196 for explanation why it yet is here. */
-	if (tokens->type == XMMS_COLLECTION_TOKEN_PATTERN &&
-	    strcmp(tokens->string, "*") == 0) {
-		*ret = xmmsv_coll_universe ();
-		return coll_next_token (tokens);
-	}
-
 	PARSER_TRY (coll_parse_autofilter);
 
 	*ret = NULL;

@@ -50,14 +50,16 @@ xmmsc_result_t*
 xmmsc_coll_get (xmmsc_connection_t *conn, const char *collname,
                 xmmsv_coll_namespace_t ns)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 	x_api_error_if (!collname, "with a NULL name", NULL);
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_COLLECTION_GET,
-	                       XMMSV_LIST_ENTRY_STR (collname),
-	                       XMMSV_LIST_ENTRY_STR (ns),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_COLLECTION_GET);
+	xmms_ipc_msg_put_string (msg, collname);
+	xmms_ipc_msg_put_string (msg, ns);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 /**
@@ -68,11 +70,13 @@ xmmsc_coll_get (xmmsc_connection_t *conn, const char *collname,
 xmmsc_result_t*
 xmmsc_coll_sync (xmmsc_connection_t *conn)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_COLLECTION_SYNC,
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_COLLECTION_SYNC);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 /**
@@ -84,12 +88,14 @@ xmmsc_coll_sync (xmmsc_connection_t *conn)
 xmmsc_result_t*
 xmmsc_coll_list (xmmsc_connection_t *conn, xmmsv_coll_namespace_t ns)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_COLLECTION_LIST,
-	                       XMMSV_LIST_ENTRY_STR (ns),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_COLLECTION_LIST);
+	xmms_ipc_msg_put_string (msg, ns);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 /**
@@ -105,16 +111,18 @@ xmmsc_result_t*
 xmmsc_coll_save (xmmsc_connection_t *conn, xmmsv_coll_t *coll,
                  const char* name, xmmsv_coll_namespace_t ns)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 	x_api_error_if (!coll, "with a NULL collection", NULL);
 	x_api_error_if (!name, "with a NULL name", NULL);
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_COLLECTION_SAVE,
-	                       XMMSV_LIST_ENTRY_STR (name),
-	                       XMMSV_LIST_ENTRY_STR (ns),
-	                       XMMSV_LIST_ENTRY_COLL (coll),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_COLLECTION_SAVE);
+	xmms_ipc_msg_put_string (msg, name);
+	xmms_ipc_msg_put_string (msg, ns);
+	xmms_ipc_msg_put_collection (msg, coll);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 /**
@@ -128,14 +136,16 @@ xmmsc_result_t*
 xmmsc_coll_remove (xmmsc_connection_t *conn,
                    const char* name, xmmsv_coll_namespace_t ns)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 	x_api_error_if (!name, "with a NULL name", NULL);
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_COLLECTION_REMOVE,
-	                       XMMSV_LIST_ENTRY_STR (name),
-	                       XMMSV_LIST_ENTRY_STR (ns),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_COLLECTION_REMOVE);
+	xmms_ipc_msg_put_string (msg, name);
+	xmms_ipc_msg_put_string (msg, ns);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 
@@ -150,13 +160,15 @@ xmmsc_coll_remove (xmmsc_connection_t *conn,
 xmmsc_result_t*
 xmmsc_coll_find (xmmsc_connection_t *conn, int mediaid, xmmsv_coll_namespace_t ns)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_COLLECTION_FIND,
-	                       XMMSV_LIST_ENTRY_INT (mediaid),
-	                       XMMSV_LIST_ENTRY_STR (ns),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_COLLECTION_FIND);
+	xmms_ipc_msg_put_int32 (msg, mediaid);
+	xmms_ipc_msg_put_string (msg, ns);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 /**
@@ -172,16 +184,18 @@ xmmsc_result_t* xmmsc_coll_rename (xmmsc_connection_t *conn,
                                    const char* to_name,
                                    xmmsv_coll_namespace_t ns)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 	x_api_error_if (!from_name, "with a NULL from_name", NULL);
 	x_api_error_if (!to_name, "with a NULL to_name", NULL);
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_COLLECTION_RENAME,
-	                       XMMSV_LIST_ENTRY_STR (from_name),
-	                       XMMSV_LIST_ENTRY_STR (to_name),
-	                       XMMSV_LIST_ENTRY_STR (ns),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_COLLECTION_RENAME);
+	xmms_ipc_msg_put_string (msg, from_name);
+	xmms_ipc_msg_put_string (msg, to_name);
+	xmms_ipc_msg_put_string (msg, ns);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 
@@ -201,6 +215,8 @@ xmmsc_coll_query_ids (xmmsc_connection_t *conn, xmmsv_coll_t *coll,
                       xmmsv_t *order, int limit_start,
                       int limit_len)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 	x_api_error_if (!coll, "with a NULL collection", NULL);
 
@@ -211,13 +227,15 @@ xmmsc_coll_query_ids (xmmsc_connection_t *conn, xmmsv_coll_t *coll,
 		xmmsv_ref (order);
 	}
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_QUERY_IDS,
-	                       XMMSV_LIST_ENTRY_COLL (coll),
-	                       XMMSV_LIST_ENTRY_INT (limit_start),
-	                       XMMSV_LIST_ENTRY_INT (limit_len),
-	                       XMMSV_LIST_ENTRY (order),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_QUERY_IDS);
+	xmms_ipc_msg_put_collection (msg, coll);
+	xmms_ipc_msg_put_int32 (msg, limit_start);
+	xmms_ipc_msg_put_int32 (msg, limit_len);
+	xmms_ipc_msg_put_value_list (msg, order); /* purposedly skip typing */
+
+	xmmsv_unref (order);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 /**
@@ -244,6 +262,8 @@ xmmsc_coll_query_infos (xmmsc_connection_t *conn, xmmsv_coll_t *coll,
                         int limit_len, xmmsv_t *fetch,
                         xmmsv_t *group)
 {
+	xmms_ipc_msg_t *msg;
+
 	x_check_conn (conn, NULL);
 	x_api_error_if (!coll, "with a NULL collection", NULL);
 	x_api_error_if (!fetch, "with a NULL fetch list", NULL);
@@ -262,15 +282,18 @@ xmmsc_coll_query_infos (xmmsc_connection_t *conn, xmmsv_coll_t *coll,
 		xmmsv_ref (group);
 	}
 
-	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                       XMMS_IPC_CMD_QUERY_INFOS,
-	                       XMMSV_LIST_ENTRY_COLL (coll),
-	                       XMMSV_LIST_ENTRY_INT (limit_start),
-	                       XMMSV_LIST_ENTRY_INT (limit_len),
-	                       XMMSV_LIST_ENTRY (order),
-	                       XMMSV_LIST_ENTRY (xmmsv_ref (fetch)),
-	                       XMMSV_LIST_ENTRY (group),
-	                       XMMSV_LIST_END);
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_QUERY_INFOS);
+	xmms_ipc_msg_put_collection (msg, coll);
+	xmms_ipc_msg_put_int32 (msg, limit_start);
+	xmms_ipc_msg_put_int32 (msg, limit_len);
+	xmms_ipc_msg_put_value_list (msg, order); /* purposedly skip typing */
+	xmms_ipc_msg_put_value_list (msg, fetch); /* purposedly skip typing */
+	xmms_ipc_msg_put_value_list (msg, group); /* purposedly skip typing */
+
+	xmmsv_unref (order);
+	xmmsv_unref (group);
+
+	return xmmsc_send_msg (conn, msg);
 }
 
 /**
@@ -295,21 +318,17 @@ xmmsc_broadcast_collection_changed (xmmsc_connection_t *c)
 xmmsc_result_t *
 xmmsc_coll_idlist_from_playlist_file (xmmsc_connection_t *conn, const char *path)
 {
-	xmmsc_result_t *res;
+	xmms_ipc_msg_t *msg;
 	char *enc_url;
 
 	x_check_conn (conn, NULL);
 
 	enc_url = _xmmsc_medialib_encode_url (path, NULL);
-
-	res = xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_COLLECTION,
-	                      XMMS_IPC_CMD_IDLIST_FROM_PLS,
-	                      XMMSV_LIST_ENTRY_STR (enc_url),
-	                      XMMSV_LIST_END);
-
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_COLLECTION, XMMS_IPC_CMD_IDLIST_FROM_PLS);
+	xmms_ipc_msg_put_string (msg, enc_url);
 	free (enc_url);
 
-	return res;
+	return xmmsc_send_msg (conn, msg);
 }
 
 

@@ -17,8 +17,10 @@ def build(bld):
 
 def configure(conf):
   if Options.platform == "darwin":
-    return
-  conf.check_cc(lib="dns_sd", header_name="dns_sd.h", function_name="DNSServiceRegister", uselib_store="dnssd", mandatory=True)
+    return True
+  if not conf.check_cc(lib="dns_sd", header_name="dns_sd.h", function_name="DNSServiceRegister", uselib_store="dnssd"):
+    return False
+  return True
 
 def set_options(opt):
   pass

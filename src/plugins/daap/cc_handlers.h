@@ -157,7 +157,7 @@ typedef struct {
 } cc_item_record_t;
 
 cc_data_t *
-cc_data_new (void);
+cc_data_new ();
 
 void
 cc_data_free (cc_data_t *fields);

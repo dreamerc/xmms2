@@ -21,14 +21,13 @@ cmd_stats (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
 	xmmsv_t *val;
-	const char *errmsg;
 
 	res = xmmsc_main_stats (conn);
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	xmmsv_dict_foreach (val, print_hash, NULL);
@@ -41,7 +40,6 @@ cmd_plugin_list (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
 	xmmsv_t *val;
-	const char *errmsg;
 	xmmsv_list_iter_t *it;
 	xmms_plugin_type_t type = XMMS_PLUGIN_TYPE_ALL;
 
@@ -55,12 +53,12 @@ cmd_plugin_list (xmmsc_connection_t *conn, gint argc, gchar **argv)
 		}
 	}
 
-	res = xmmsc_main_list_plugins (conn, type);
+	res = xmmsc_plugin_list (conn, type);
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	xmmsv_get_list_iter (val, &it);
@@ -84,15 +82,12 @@ void
 cmd_quit (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	res = xmmsc_quit (conn);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -103,7 +98,6 @@ cmd_browse (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsc_result_t *res;
 	xmmsv_list_iter_t *it;
 	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 3) {
 		print_error ("Need to specify a URL to browse");
@@ -113,8 +107,8 @@ cmd_browse (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("%s", xmmsv_get_error_old (val));
 	}
 
 	xmmsv_get_list_iter (val, &it);

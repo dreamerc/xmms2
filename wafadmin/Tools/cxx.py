@@ -17,9 +17,9 @@ g_cxx_flag_vars = [
 
 EXT_CXX = ['.cpp', '.cc', '.cxx', '.C', '.c++']
 
-g_cxx_type_vars=['CXXFLAGS', 'LINKFLAGS']
+TaskGen.bind_feature('cxx', ['apply_core'])
 
-# TODO remove in waf 1.6
+g_cxx_type_vars=['CXXFLAGS', 'LINKFLAGS']
 class cxx_taskgen(ccroot.ccroot_abstract):
 	pass
 
@@ -37,9 +37,7 @@ def init_cxx(self):
 		raise Utils.WafError("At least one compiler (g++, ..) must be selected")
 
 @feature('cxx')
-@after('apply_incpaths')
 def apply_obj_vars_cxx(self):
-	"""after apply_incpaths for INC_PATHS"""
 	env = self.env
 	app = env.append_unique
 	cxxpath_st = env['CPPPATH_ST']
@@ -55,9 +53,7 @@ def apply_obj_vars_cxx(self):
 		app('_CXXINCFLAGS', cxxpath_st % i)
 
 @feature('cxx')
-@after('apply_lib_vars')
 def apply_defines_cxx(self):
-	"""after uselib is set for CXXDEFINES"""
 	self.defines = getattr(self, 'defines', [])
 	lst = self.to_list(self.defines) + self.to_list(self.env['CXXDEFINES'])
 	milst = []
@@ -80,25 +76,28 @@ def apply_defines_cxx(self):
 @extension(EXT_CXX)
 def cxx_hook(self, node):
 	# create the compilation task: cpp or cc
-	if getattr(self, 'obj_ext', None):
-		obj_ext = self.obj_ext
-	else:
-		obj_ext = '_%d.o' % self.idx
+	task = self.create_task('cxx')
+	try: obj_ext = self.obj_ext
+	except AttributeError: obj_ext = '_%d.o' % self.idx
 
-	task = self.create_task('cxx', node, node.change_ext(obj_ext))
-	try:
-		self.compiled_tasks.append(task)
-	except AttributeError:
-		raise Utils.WafError('Have you forgotten to set the feature "cxx" on %s?' % str(self))
+	task.defines  = self.scanner_defines
+
+	task.inputs = [node]
+	task.outputs = [node.change_ext(obj_ext)]
+	self.compiled_tasks.append(task)
 	return task
 
 cxx_str = '${CXX} ${CXXFLAGS} ${CPPFLAGS} ${_CXXINCFLAGS} ${_CXXDEFFLAGS} ${CXX_SRC_F}${SRC} ${CXX_TGT_F}${TGT}'
-cls = Task.simple_task_type('cxx', cxx_str, color='GREEN', ext_out='.o', ext_in='.cxx', shell=False)
+link_str = '${LINK_CXX} ${CXXLNK_SRC_F}${SRC} ${CXXLNK_TGT_F}${TGT} ${LINKFLAGS} ${_LIBDIRFLAGS} ${_LIBFLAGS}'
+vnum_link_str = '${LINK_CXX} ${CXXLNK_SRC_F}${SRC} ${CXXLNK_TGT_F}${TGT[1].bldpath(env)} ${LINKFLAGS} ${_LIBDIRFLAGS} ${_LIBFLAGS} && ln -sf ${TGT[1].name} ${TGT[0].bldpath(env)}'
+
+cls = Task.simple_task_type('cxx', cxx_str, color='GREEN', ext_out='.o', ext_in='.cxx')
 cls.scan = ccroot.scan
 cls.vars.append('CXXDEPS')
-
-link_str = '${LINK_CXX} ${CXXLNK_SRC_F}${SRC} ${CXXLNK_TGT_F}${TGT[0].abspath(env)} ${LINKFLAGS}'
-cls = Task.simple_task_type('cxx_link', link_str, color='YELLOW', ext_in='.o', ext_out='.bin', shell=False)
+cls = Task.simple_task_type('cxx_link', link_str, color='YELLOW', ext_in='.o')
 cls.maxjobs = 1
-cls.install = Utils.nada
+cls = Task.simple_task_type('vnum_cxx_link', vnum_link_str, color='CYAN', ext_in='.o')
+cls.maxjobs = 1
+
+TaskGen.declare_order('apply_incpaths', 'apply_defines_cxx', 'apply_core', 'apply_lib_vars', 'apply_obj_vars_cxx', 'apply_obj_vars')
 

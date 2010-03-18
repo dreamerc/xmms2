@@ -13,9 +13,9 @@ def build(bld):
 
 def configure(conf):
     if sys.platform != 'darwin':
-        conf.fatal("Not supported on this platform")
+        return False
 
-    conf.env['FRAMEWORK_CoreFoundation'] += ['CoreFoundation']
+    conf.env['FRAMEWORK_CoreFoundation'] += ['-framework', 'CoreFoundation']
     return True
 
 def set_options(opt):

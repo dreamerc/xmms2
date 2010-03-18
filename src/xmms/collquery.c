@@ -55,11 +55,7 @@ typedef struct {
 	coll_query_params_t *params;
 } coll_query_t;
 
-typedef enum {
-	COLL_QUERY_VALUE_TYPE_STRING,
-	COLL_QUERY_VALUE_TYPE_INT,
-	COLL_QUERY_VALUE_TYPE_BOTH
-} coll_query_value_type_t;
+
 
 static coll_query_t* init_query (coll_query_params_t *params);
 static void add_fetch_group_aliases (coll_query_t *query, coll_query_params_t *params);
@@ -76,7 +72,7 @@ static void query_append_filter (coll_query_t *query, xmmsv_coll_type_t type, gc
 static void query_string_append_joins (gpointer key, gpointer val, gpointer udata);
 static void query_string_append_alias_list (coll_query_t *query, GString *qstring, xmmsv_t *fields);
 static void query_string_append_fetch (coll_query_t *query, GString *qstring);
-static void query_string_append_alias (GString *qstring, coll_query_alias_t *alias, coll_query_value_type_t type);
+static void query_string_append_alias (GString *qstring, coll_query_alias_t *alias);
 
 static const gchar *canonical_field_name (const gchar *field);
 static gboolean operator_is_allmedia (xmmsv_coll_t *op);
@@ -172,23 +168,12 @@ xmms_collection_gen_query (coll_query_t *query)
 	/* If no alias base yet (m0), select the default base property */
 	if (query->alias_base == NULL) {
 		query_make_alias (query, XMMS_COLLQUERY_DEFAULT_BASE, FALSE);
-	} else {
-		/* We are actually interested in the property of m0...
-		   Let's make sure it comes from a good source. */
-		if (query->conditions->len > 0) {
-			g_string_append (query->conditions, " AND ");
-		}
-		g_string_append_printf (query->conditions,
-			"xmms_source_pref (m0.source) = "
-			"(SELECT MIN (xmms_source_pref (n.source)) FROM Media AS n "
-			 "WHERE n.id = m0.id AND n.key = '%s')",
-			query->alias_base);
 	}
 
 	/* Append select and joins */
 	qstring = g_string_new ("SELECT DISTINCT ");
 	query_string_append_fetch (query, qstring);
-	g_string_append (qstring, " FROM Media AS m0");
+	g_string_append (qstring, " FROM Media as m0");
 	g_hash_table_foreach (query->aliases, query_string_append_joins, qstring);
 
 	/* Append conditions */
@@ -235,8 +220,6 @@ xmms_collection_append_to_query (xmms_coll_dag_t *dag, xmmsv_coll_t *coll,
 	guint *idlist;
 	gchar *attr1, *attr2, *attr3;
 	gboolean case_sens;
-	xmmsv_list_iter_t *iter;
-	xmmsv_t *tmp;
 
 	xmmsv_coll_type_t type = xmmsv_coll_get_type (coll);
 	switch (type) {
@@ -254,11 +237,9 @@ xmms_collection_append_to_query (xmms_coll_dag_t *dag, xmmsv_coll_t *coll,
 		i = 0;
 		query_append_string (query, "(");
 
-		xmmsv_get_list_iter (xmmsv_coll_operands_get (coll), &iter);
-
-		for (xmmsv_list_iter_first (iter);
-		     xmmsv_list_iter_valid (iter);
-		     xmmsv_list_iter_next (iter)) {
+		xmmsv_coll_operand_list_save (coll);
+		xmmsv_coll_operand_list_first (coll);
+		while (xmmsv_coll_operand_list_entry (coll, &op)) {
 			if (i != 0) {
 				if (type == XMMS_COLLECTION_TYPE_UNION)
 					query_append_string (query, " OR ");
@@ -267,11 +248,10 @@ xmms_collection_append_to_query (xmms_coll_dag_t *dag, xmmsv_coll_t *coll,
 			} else {
 				i = 1;
 			}
-			xmmsv_list_iter_entry (iter, &tmp);
-			xmmsv_get_coll (tmp, &op);
 			xmms_collection_append_to_query (dag, op, query);
+			xmmsv_coll_operand_list_next (coll);
 		}
-		xmmsv_list_iter_explicit_destroy (iter);
+		xmmsv_coll_operand_list_restore (coll);
 
 		query_append_string (query, ")");
 		break;
@@ -422,13 +402,14 @@ query_append_protect_string (coll_query_t *query, gchar *s)
 static void
 query_append_operand (coll_query_t *query, xmms_coll_dag_t *dag, xmmsv_coll_t *coll)
 {
-	xmmsv_coll_t *op = NULL;
+	xmmsv_coll_t *op;
 	gchar *target_name;
 	gchar *target_ns;
 	guint  target_nsid;
 
-	if (!xmmsv_list_get_coll (xmmsv_coll_operands_get (coll), 0, &op)) {
-
+	xmmsv_coll_operand_list_save (coll);
+	xmmsv_coll_operand_list_first (coll);
+	if (!xmmsv_coll_operand_list_entry (coll, &op)) {
 		/* Ref'd coll not saved as operand, look for it */
 		if (xmmsv_coll_attribute_get (coll, "reference", &target_name) &&
 		    xmmsv_coll_attribute_get (coll, "namespace", &target_ns)) {
@@ -437,6 +418,7 @@ query_append_operand (coll_query_t *query, xmms_coll_dag_t *dag, xmmsv_coll_t *c
 			op = xmms_collection_get_pointer (dag, target_name, target_nsid);
 		}
 	}
+	xmmsv_coll_operand_list_restore (coll);
 
 	/* Append reference operator */
 	if (op != NULL) {
@@ -453,16 +435,16 @@ query_append_intersect_operand (coll_query_t *query, xmms_coll_dag_t *dag,
                                 xmmsv_coll_t *coll)
 {
 	xmmsv_coll_t *op;
-	xmmsv_t *tmp;
 
-	if (xmmsv_list_get (xmmsv_coll_operands_get (coll), 0, &tmp)) {
-		xmmsv_get_coll (tmp, &op);
-
+	xmmsv_coll_operand_list_save (coll);
+	xmmsv_coll_operand_list_first (coll);
+	if (xmmsv_coll_operand_list_entry (coll, &op)) {
 		if (!operator_is_allmedia (op)) {
 			query_append_string (query, " AND ");
 			xmms_collection_append_to_query (dag, op, query);
 		}
 	}
+	xmmsv_coll_operand_list_restore (coll);
 }
 
 /* Append a filtering clause on the field value, depending on the operator type. */
@@ -488,12 +470,10 @@ query_append_filter (coll_query_t *query, xmmsv_coll_type_t type,
 	case XMMS_COLLECTION_TYPE_EQUALS:
 	case XMMS_COLLECTION_TYPE_MATCH:
 		if (case_sens) {
-			query_string_append_alias (query->conditions, alias,
-			                           COLL_QUERY_VALUE_TYPE_STRING);
+			query_string_append_alias (query->conditions, alias);
 		} else {
 			query_append_string (query, "(");
-			query_string_append_alias (query->conditions, alias,
-			                           COLL_QUERY_VALUE_TYPE_STRING);
+			query_string_append_alias (query->conditions, alias);
 			query_append_string (query, " COLLATE NOCASE)");
 		}
 
@@ -526,8 +506,7 @@ query_append_filter (coll_query_t *query, xmmsv_coll_type_t type,
 	/* do not escape numerical values */
 	case XMMS_COLLECTION_TYPE_SMALLER:
 	case XMMS_COLLECTION_TYPE_GREATER:
-		query_string_append_alias (query->conditions, alias,
-		                           COLL_QUERY_VALUE_TYPE_INT);
+		query_string_append_alias (query->conditions, alias);
 		if (type == XMMS_COLLECTION_TYPE_SMALLER) {
 			query_append_string (query, " < ");
 		} else {
@@ -537,8 +516,7 @@ query_append_filter (coll_query_t *query, xmmsv_coll_type_t type,
 		break;
 
 	case XMMS_COLLECTION_TYPE_HAS:
-		query_string_append_alias (query->conditions, alias,
-		                           COLL_QUERY_VALUE_TYPE_STRING);
+		query_string_append_alias (query->conditions, alias);
 		query_append_string (query, " is not null");
 		break;
 
@@ -567,11 +545,9 @@ query_string_append_joins (gpointer key, gpointer val, gpointer udata)
 		}
 
 		g_string_append_printf (qstring,
-			" JOIN Media AS m%u ON m0.id=m%u.id AND m%u.key='%s' AND"
-			" xmms_source_pref (m%u.source) = "
-				"(SELECT MIN (xmms_source_pref (n.source)) FROM Media AS n"
-				" WHERE n.id = m0.id AND n.key = '%s')",
-			alias->id, alias->id, alias->id, field, alias->id, field);
+		                        " JOIN Media as m%u ON m0.id=m%u.id"
+		                        " AND m%u.key='%s'",
+		                        alias->id, alias->id, alias->id, field);
 	}
 }
 
@@ -603,21 +579,15 @@ query_string_append_alias_list (coll_query_t *query, GString *qstring,
 		if (canon_field != NULL) {
 			alias = query_get_alias (query, canon_field);
 			if (alias != NULL) {
-				query_string_append_alias (qstring, alias,
-				                           COLL_QUERY_VALUE_TYPE_BOTH);
+				query_string_append_alias (qstring, alias);
 			} else {
 				if (*field != '~') {
 					if (strcmp(canon_field, "id") == 0) {
 						g_string_append (qstring, "m0.id");
 					} else {
 						g_string_append_printf (qstring,
-							"(SELECT IFNULL (intval, value) "
-							 "FROM Media WHERE id = m0.id AND key='%s' AND "
-							 "xmms_source_pref (source) = "
-							  "(SELECT MIN (xmms_source_pref (n.source)) "
-							   "FROM Media AS n WHERE n.id = m0.id AND "
-							                         "n.key = '%s'))",
-							canon_field, canon_field);
+							"(SELECT value FROM Media WHERE id = m0.id AND "
+							"key='%s')", canon_field);
 					}
 				}
 			}
@@ -656,30 +626,17 @@ query_string_append_fetch (coll_query_t *query, GString *qstring)
 			g_string_append (qstring, ", ");
 		}
 
-		query_string_append_alias (qstring, alias,
-		                           COLL_QUERY_VALUE_TYPE_BOTH);
+		query_string_append_alias (qstring, alias);
 		g_string_append_printf (qstring, " AS %s", name);
 	}
 }
 
 static void
-query_string_append_alias (GString *qstring, coll_query_alias_t *alias,
-                           coll_query_value_type_t type)
+query_string_append_alias (GString *qstring, coll_query_alias_t *alias)
 {
 	switch (alias->type) {
 	case XMMS_QUERY_ALIAS_PROP:
-		switch (type) {
-		case COLL_QUERY_VALUE_TYPE_STRING:
-			g_string_append_printf (qstring, "m%u.value", alias->id);
-			break;
-		case COLL_QUERY_VALUE_TYPE_INT:
-			g_string_append_printf (qstring, "m%u.intval", alias->id);
-			break;
-		case COLL_QUERY_VALUE_TYPE_BOTH:
-			g_string_append_printf (qstring, "IFNULL (m%u.intval, m%u.value)",
-			                        alias->id, alias->id);
-			break;
-		}
+		g_string_append_printf (qstring, "m%u.value", alias->id);
 		break;
 
 	case XMMS_QUERY_ALIAS_ID:

@@ -23,25 +23,15 @@
 namespace Xmms
 {
 
-	// This should probably provide more methods like getFunction(), getLine() or something.
-	/** @class exception exceptions.h "xmmsclient/xmmsclient++/exceptions.h"
-	 *  @brief Base class for all Xmms:: exceptions.
-	 *
-	 *  @note Derive your exceptions from it if you want them to
-	 *  be handled by library in asynchronous situations.
-	 */
-	class exception
-	{
-		public:
-			virtual ~exception() throw() {}
-	};
+	// These should probably be inherited from something like Xmms::error
+	// to provide more methods like getFunction(), getLine() or something.
 
 	// Someone kick doxygen for me please!, this line just can't be cut
 	/** @class connection_error exceptions.h "xmmsclient/xmmsclient++/exceptions.h"
 	 *  @brief Thrown on connection error when connecting or when calling a
 	 *         function and not connected.
 	 */
-	class connection_error : public exception, public std::runtime_error
+	class connection_error : public std::runtime_error
 	{
 		public:
 			explicit connection_error( const std::string& what_arg );
@@ -52,7 +42,7 @@ namespace Xmms
 	 *  @brief Thrown when trying to create a list from non-list resultset.
 	 *  @note Logic error, should <b>not</b> be caught, fix the code instead.
 	 */
-	class not_list_error : public exception, public std::logic_error
+	class not_list_error : public std::logic_error
 	{
 		public:
 			explicit not_list_error( const std::string& what_arg );
@@ -63,7 +53,7 @@ namespace Xmms
 	 *
 	 *  @brief Thrown if the returned resultset was in error state.
 	 */
-	class result_error : public exception, public std::runtime_error
+	class result_error : public std::runtime_error
 	{
 		public:
 			explicit result_error( const std::string& what_arg );
@@ -74,7 +64,7 @@ namespace Xmms
 	 *
 	 *  @brief Thrown if the returned value is an error.
 	 */
-	class value_error : public exception, public std::runtime_error
+	class value_error : public std::runtime_error
 	{
 		public:
 			explicit value_error( const std::string& what_arg );
@@ -85,7 +75,7 @@ namespace Xmms
 	 *
 	 *  @brief Thrown if the arguments passed to a method are invalid.
 	 */
-	class argument_error : public exception, public std::runtime_error
+	class argument_error : public std::runtime_error
 	{
 		public:
 			explicit argument_error( const std::string& what_arg );
@@ -96,7 +86,7 @@ namespace Xmms
 	 *  @brief Thrown when trying to create a dict from non-dict resultset.
 	 *  @note Logic error, should <b>not</b> be caught, fix the code instead.
 	 */
-	class not_dict_error : public exception, public std::logic_error
+	class not_dict_error : public std::logic_error
 	{
 		public:
 			explicit not_dict_error( const std::string& what_arg );
@@ -106,7 +96,7 @@ namespace Xmms
 	/** @class no_such_key_error exceptions.h "xmmsclient/xmmsclient/exceptions.h"
 	 *  @brief Thrown if trying to access a non-existant key in a Dict.
 	 */
-	class no_such_key_error : public exception, public std::runtime_error
+	class no_such_key_error : public std::runtime_error
 	{
 		public:
 			explicit no_such_key_error( const std::string& what_arg );
@@ -118,7 +108,7 @@ namespace Xmms
 	 *         running.
 	 *  @note Logic error, should <b>not</b> be caught, fix the code instead.
 	 */
-	class mainloop_running_error : public exception, public std::logic_error
+	class mainloop_running_error : public std::logic_error
 	{
 		public:
 			explicit mainloop_running_error( const std::string& what_arg );
@@ -129,7 +119,7 @@ namespace Xmms
 	 *  @brief Thrown from Dict::get if the type provided was wrong.
 	 *  @note Logic error, should <b>not</b> be caught, fix the code instead.
 	 */
-	class wrong_type_error : public exception, public std::logic_error
+	class wrong_type_error : public std::logic_error
 	{
 		public:
 			explicit wrong_type_error( const std::string& what_arg );
@@ -140,7 +130,7 @@ namespace Xmms
 	 *
 	 *  @brief Thrown if trying to retrieve a non-existing operand of a coll operator.
 	 */
-	class missing_operand_error : public exception, public std::runtime_error
+	class missing_operand_error : public std::runtime_error
 	{
 		public:
 			explicit missing_operand_error( const std::string& what_arg );
@@ -153,7 +143,7 @@ namespace Xmms
 	 *  @note It's better to check for List validity
 	 *        than have this caught/thrown.
 	 */
-	class out_of_range : public exception, public std::out_of_range
+	class out_of_range : public std::out_of_range
 	{
 		public:
 			explicit out_of_range( const std::string& what_arg );
@@ -165,7 +155,7 @@ namespace Xmms
 	 *  @brief Thrown if trying to perform an operation forbidden by
 	 *         the type of the collection operator.
 	 */
-	class collection_type_error : public exception, public std::runtime_error
+	class collection_type_error : public std::runtime_error
 	{
 		public:
 			explicit collection_type_error( const std::string& what_arg );
@@ -176,7 +166,7 @@ namespace Xmms
 	 *
 	 *  @brief Thrown if a collection operation failed.
 	 */
-	class collection_operation_error : public exception, public std::runtime_error
+	class collection_operation_error : public std::runtime_error
 	{
 		public:
 			explicit collection_operation_error( const std::string& what_arg );
@@ -187,7 +177,7 @@ namespace Xmms
 	 *
 	 *  @brief Thrown if the parsing of a collection pattern failed.
 	 */
-	class collection_parsing_error : public exception, public std::runtime_error
+	class collection_parsing_error : public std::runtime_error
 	{
 		public:
 			explicit collection_parsing_error( const std::string& what_arg );
@@ -198,7 +188,7 @@ namespace Xmms
 	 *
 	 *  @brief Thrown if an invalid url is used.
 	 */
-	class invalid_url : public exception, public std::runtime_error
+	class invalid_url : public std::runtime_error
 	{
 		public:
 			explicit invalid_url( const std::string& what_arg );

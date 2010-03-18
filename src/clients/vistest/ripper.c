@@ -67,14 +67,14 @@ xmmsc_connection_t *x_connection;
 int x_vis;
 int intr = 0;
 
-static void
+void
 quit (int signum)
 {
 	intr = 1;
 }
 
-static void
-xmms2_quit (void)
+void
+xmms2_quit ()
 {
 	xmmsc_visualization_shutdown (x_connection, x_vis);
 	if (x_connection) {
@@ -82,12 +82,9 @@ xmms2_quit (void)
 	}
 }
 
-static void
-xmms2_init (void)
+void xmms2_init ()
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	char *path = getenv ("XMMS_PATH");
 	xmmsv_t *cfg;
 
@@ -100,9 +97,8 @@ xmms2_init (void)
 
 	res = xmmsc_visualization_init (x_connection);
 	xmmsc_result_wait (res);
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		puts (errmsg);
+	if (xmmsc_result_iserror (res)) {
+		puts (xmmsc_result_get_error (res));
 		exit (EXIT_FAILURE);
 	}
 	x_vis = xmmsc_visualization_init_handle (res);
@@ -114,12 +110,10 @@ xmms2_init (void)
 
 	res = xmmsc_visualization_properties_set (x_connection, x_vis, cfg);
 	xmmsc_result_wait (res);
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		x_exit (errmsg);
+	if (xmmsc_result_iserror (res)) {
+		x_exit (xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
-	xmmsv_unref (cfg);
 
 	while (!xmmsc_visualization_started (x_connection, x_vis)) {
 		res = xmmsc_visualization_start (x_connection, x_vis);
@@ -138,7 +132,7 @@ xmms2_init (void)
 	atexit (xmms2_quit);
 }
 
-int main (int argc, char **argv)
+int main ()
 {
 	ogg_stream_state os; /* take physical pages, weld into a logical
 													stream of packets */

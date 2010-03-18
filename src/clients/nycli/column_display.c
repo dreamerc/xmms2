@@ -26,10 +26,6 @@ struct column_display_St {
 	gint termwidth;
 	gint availchars;
 	gchar *buffer;       /* Used to render strings. */
-	/* string used to highlight current track in classic list display */
-	const gchar *list_marker;
-	/* the string used if the row isn't marked with list_marker */
-	gchar *list_marker_pad;
 };
 
 struct column_def_St {
@@ -178,15 +174,15 @@ result_to_string (xmmsv_t *val, column_def_t *coldef, gchar *buffer)
 }
 
 static void
-print_fixed_width_string (const gchar *value, gint width, gint realsize,
+print_fixed_width_string (gchar *value, gint width, gint realsize,
                           column_def_align_t align, gchar padchar)
 {
 	if (align == COLUMN_DEF_ALIGN_LEFT) {
-		g_printf ("%s", value);
+		g_printf (value);
 		print_padding (width - realsize, padchar);
 	} else {
 		print_padding (width - realsize, padchar);
-		g_printf ("%s", value);
+		g_printf (value);
 	}
 }
 
@@ -204,7 +200,7 @@ print_string_using_coldef (column_display_t *disp, column_def_t *coldef,
 
 	case COLUMN_DEF_SIZE_AUTO:
 		/* Just print the string */
-		g_printf ("%s", disp->buffer);
+		g_printf (disp->buffer);
 		break;
 	}
 }
@@ -253,7 +249,7 @@ column_def_init_with_udata (const gchar *name, gpointer udata, guint size,
 }
 
 /* Free the contents of the column_def (NOT the column_def itself) */
-static void
+void
 column_def_free (column_def_t *coldef)
 {
 	g_free (coldef);
@@ -272,7 +268,6 @@ column_display_init (cli_infos_t *infos)
 	disp->termwidth = find_terminal_width ();
 	disp->availchars = 0;
 	disp->buffer = NULL;
-	disp->list_marker_pad = NULL;
 
 	return disp;
 }
@@ -338,7 +333,6 @@ column_display_free (column_display_t *disp)
 	}
 	g_array_free (disp->cols, TRUE);
 
-	g_free (disp->list_marker_pad);
 	g_free (disp->buffer);
 	g_free (disp);
 }
@@ -352,10 +346,10 @@ column_display_infos_get (column_display_t *disp)
 void
 column_display_print_header (column_display_t *disp)
 {
-	gint i;
+	gint i, d;
 	gint realsize;
 	column_def_t *coldef;
-	const gchar *headstr;
+	gchar *headstr;
 
 	/* Display Result head line */
 	headstr = _("--[Result]-");
@@ -366,7 +360,7 @@ column_display_print_header (column_display_t *disp)
 	/* Display column headers */
 	for (i = 0; i < disp->cols->len; ++i) {
 		coldef = g_array_index (disp->cols, column_def_t *, i);
-		realsize = g_snprintf (disp->buffer, coldef->size + 1, "%s", coldef->name);
+		realsize = g_snprintf (disp->buffer, coldef->size + 1, coldef->name);
 		print_fixed_width_string (disp->buffer, coldef->size, realsize,
 		                          coldef->align, ' ');
 	}
@@ -404,7 +398,7 @@ column_display_print_footer_totaltime (column_display_t *disp)
 void
 column_display_prepare (column_display_t *disp)
 {
-	gint availchars, totalchars;
+	gint termwidth, availchars, totalchars;
 	gint i;
 	double ratio;
 	column_def_t *coldef;
@@ -499,10 +493,11 @@ column_display_render_highlight (column_display_t *disp, column_def_t *coldef,
 {
 	gint realsize, highlight = GPOINTER_TO_INT(coldef->arg.udata);
 
+	/* FIXME: Make these customizable */
 	if (disp->counter == highlight) {
-		realsize = g_printf ("%s", disp->list_marker);
+		realsize = g_printf ("->");
 	} else {
-		realsize = g_printf ("%s", disp->list_marker_pad);
+		realsize = g_printf ("  ");
 	}
 
 	return realsize;
@@ -529,7 +524,7 @@ column_display_render_text (column_display_t *disp, column_def_t *coldef,
 	gint realsize;
 	const gchar *sep = coldef->name;
 
-	realsize = g_printf ("%s", sep);
+	realsize = g_printf (sep);
 
 	return realsize;
 }
@@ -550,7 +545,7 @@ column_display_render_time (column_display_t *disp, column_def_t *coldef,
 		break;
 	default:
 		/* Invalid type, don't render anything*/
-		return 0;
+		return;
 	}
 
 	time = format_time (millisecs, FALSE);
@@ -562,7 +557,7 @@ column_display_render_time (column_display_t *disp, column_def_t *coldef,
 	 * alignment and overflow termwidth if strlen(time) > coldef->size,
 	 * but it's a temporary fix to avoid displaying a wrong time.
 	 */
-	realsize = g_snprintf (disp->buffer, disp->termwidth + 1, "%s", time);
+	realsize = g_snprintf (disp->buffer, disp->termwidth + 1, time);
 	print_string_using_coldef (disp, coldef, realsize);
 
 	g_free (time);
@@ -592,42 +587,11 @@ column_display_render_format (column_display_t *disp, column_def_t *coldef,
 	const gchar *format = (const gchar *) coldef->arg.udata;
 
 	/* Format the whole string first */
-	xmmsv_dict_format (disp->buffer, disp->termwidth, format, val);
+	xmmsc_entry_format (disp->buffer, disp->termwidth, format, val);
 
 	/* then crop (crop_string uses internal buffer, so it's ok that dest=src) */
 	realsize = crop_string (disp->buffer, disp->buffer, coldef->size);
 	print_string_using_coldef (disp, coldef, realsize);
 
 	return realsize;
-}
-
-void
-column_display_set_list_marker (column_display_t *disp, const gchar *marker)
-{
-	GString *marker_pad;
-	gchar *ansi_seq, *ansi_seq_end;
-
-	disp->list_marker = marker;
-
-	marker_pad = g_string_new (marker);
-	ansi_seq = marker_pad->str;
-
-	g_free (disp->list_marker_pad);
-
-	while ((ansi_seq = strchr (ansi_seq, '\x1b'))) {
-		if (!(ansi_seq_end = strchr (ansi_seq, 'm'))) {
-			ansi_seq++;
-			continue;
-		} else {
-			g_string_erase (marker_pad, ansi_seq - marker_pad->str,
-			                ansi_seq_end - ansi_seq + 1);
-		}
-	}
-
-	g_string_truncate (marker_pad,
-	                   g_utf8_strlen (marker_pad->str, marker_pad->len));
-	/* reusing ansi_seq to keep place in marker_pad */
-	for (ansi_seq = marker_pad->str; *ansi_seq; *ansi_seq++ = ' ');
-	disp->list_marker_pad = marker_pad->str;
-	g_string_free (marker_pad, FALSE);
 }

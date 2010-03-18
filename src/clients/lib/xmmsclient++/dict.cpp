@@ -163,8 +163,6 @@ namespace Xmms
 		// Immediately replace with a "flat" dict (default sources)
 		xmmsv_t *flat = xmmsv_propdict_to_dict( propdict_, NULL );
 		setValue( flat );
-		// setValue refs flat, unref here to get back to refcount of 1
-		xmmsv_unref ( flat );
 	}
 
 	PropDict::PropDict( const PropDict& dict )
@@ -203,8 +201,6 @@ namespace Xmms
 
 		xmmsv_t *flat = xmmsv_propdict_to_dict( propdict_, &prefs[0] );
 		setValue( flat );
-		// setValue refs flat, unref here to get back to refcount of 1
-		xmmsv_unref ( flat );
 	}
 
 

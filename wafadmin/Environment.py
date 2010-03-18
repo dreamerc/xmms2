@@ -9,7 +9,7 @@ This means env['foo'] = {}; print env['foo'] will print [] not {}
 """
 
 import os, copy, re
-import Logs, Options, Utils
+import Logs, Options
 from Constants import *
 re_imp = re.compile('^(#)*?([^#=]*?)\ =\ (.*?)$', re.M)
 
@@ -19,8 +19,12 @@ class Environment(object):
 	"""
 	__slots__ = ("table", "parent")
 	def __init__(self, filename=None):
-		self.table = {}
-		#self.parent = None
+		self.table={}
+		#self.parent = None <- set only if necessary
+
+		if Options.commands['configure']:
+			# set the prefix once and for everybody on creation (configuration)
+			self.table['PREFIX'] = os.path.abspath(os.path.expanduser(Options.options.prefix))
 
 		if filename:
 			self.load(filename)
@@ -40,59 +44,43 @@ class Environment(object):
 		keys.sort()
 		return "\n".join(["%r %r" % (x, self.__getitem__(x)) for x in keys])
 
-	def __getitem__(self, key):
-		try:
-			while 1:
-				x = self.table.get(key, None)
-				if not x is None:
-					return x
-				self = self.parent
-		except AttributeError:
-			return []
-
-	def __setitem__(self, key, value):
-		self.table[key] = value
-
-	def __delitem__(self, key, value):
-		del self.table[key]
-
 	def set_variant(self, name):
 		self.table[VARIANT] = name
 
 	def variant(self):
-		try:
-			while 1:
-				x = self.table.get(VARIANT, None)
-				if not x is None:
-					return x
-				self = self.parent
-		except AttributeError:
-			return DEFAULT
+		env = self
+		while 1:
+			try:
+				return env.table[VARIANT]
+			except KeyError:
+				try: env = env.parent
+				except AttributeError: return DEFAULT
 
 	def copy(self):
-		# TODO waf 1.6 rename this method derive, #368
 		newenv = Environment()
+		if Options.commands['configure']:
+			if self['PREFIX']: del newenv.table['PREFIX']
 		newenv.parent = self
 		return newenv
 
-	def detach(self):
-		"""TODO try it
-		modifying the original env will not change the copy"""
-		tbl = self.get_merged_dict()
+	def __getitem__(self, key):
+		x = self.table.get(key, None)
+		if not x is None: return x
 		try:
-			delattr(self, 'parent')
+			u = self.parent
 		except AttributeError:
-			pass
+			return []
 		else:
-			keys = tbl.keys()
-			for x in keys:
-				tbl[x] = copy.deepcopy(tbl[x])
-			self.table = tbl
+			return u[key]
+
+	def __setitem__(self, key, value):
+		self.table[key] = value
 
 	def get_flat(self, key):
 		s = self[key]
-		if isinstance(s, str): return s
-		return ' '.join(s)
+		if not s: return ''
+		elif isinstance(s, list): return ' '.join(s)
+		else: return s
 
 	def _get_list_value_for_modification(self, key):
 		"""Gets a value that must be a list for further modification.  The
@@ -105,7 +93,7 @@ class Environment(object):
 			try: value = self.parent[key]
 			except AttributeError: value = []
 			if isinstance(value, list):
-				value = value[:]
+				value = copy.copy(value)
 			else:
 				value = [value]
 		else:
@@ -144,8 +132,11 @@ class Environment(object):
 			if value not in current_value:
 				current_value.append(value)
 
-	def get_merged_dict(self):
-		"""compute a merged table"""
+	def store(self, filename):
+		"Write the variables into a file"
+		file = open(filename, 'w')
+
+		# compute a merged table
 		table_list = []
 		env = self
 		while 1:
@@ -155,13 +146,8 @@ class Environment(object):
 		merged_table = {}
 		for table in table_list:
 			merged_table.update(table)
-		return merged_table
 
-	def store(self, filename):
-		"Write the variables into a file"
-		file = open(filename, 'w')
-		merged_table = self.get_merged_dict()
-		keys = list(merged_table.keys())
+		keys = merged_table.keys()
 		keys.sort()
 		for k in keys: file.write('%s = %r\n' % (k, merged_table[k]))
 		file.close()
@@ -169,7 +155,9 @@ class Environment(object):
 	def load(self, filename):
 		"Retrieve the variables from a file"
 		tbl = self.table
-		code = Utils.readf(filename)
+		file = open(filename, 'r')
+		code = file.read()
+		file.close()
 		for m in re_imp.finditer(code):
 			g = m.group
 			tbl[g(2)] = eval(g(3))
@@ -179,27 +167,4 @@ class Environment(object):
 		"return the destdir, useful for installing"
 		if self.__getitem__('NOINSTALL'): return ''
 		return Options.options.destdir
-
-	def update(self, d):
-		for k, v in d.iteritems():
-			self[k] = v
-
-
-	def __getattr__(self, name):
-		if name in self.__slots__:
-			return object.__getattr__(self, name)
-		else:
-			return self[name]
-
-	def __setattr__(self, name, value):
-		if name in self.__slots__:
-			object.__setattr__(self, name, value)
-		else:
-			self[name] = value
-
-	def __detattr__(self, name):
-		if name in self.__slots__:
-			object.__detattr__(self, name)
-		else:
-			del self[name]
 

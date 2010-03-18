@@ -152,9 +152,7 @@ xmms_daap_plugin_setup (xmms_xform_plugin_t *xform_plugin)
 	                              "daap://*",
 	                              XMMS_STREAM_TYPE_END);
 
-	if (!daap_mdns_setup ()) {
-		return FALSE;
-	}
+	daap_mdns_initialize ();
 
 	if (!login_sessions) {
 		login_sessions = g_hash_table_new (g_str_hash, g_str_equal);
@@ -218,7 +216,6 @@ daap_get_urls_from_server (xmms_xform_t *xform, gchar *host, guint port,
 
 		login_data->session_id = daap_command_login (host, port, 0, err);
 		if (xmms_error_iserror (err)) {
-			g_free (login_data);
 			return FALSE;
 		}
 
@@ -296,7 +293,7 @@ xmms_daap_init (xmms_xform_t *xform)
 	xmms_error_reset (&err);
 
 	if (!get_data_from_url (url, &(data->host), &(data->port), &command, &err)) {
-		goto init_error;
+		return FALSE;
 	}
 
 	hash = g_strdup_printf ("%s:%u", data->host, data->port);
@@ -313,8 +310,7 @@ xmms_daap_init (xmms_xform_t *xform)
 		                                             login_data->request_id,
 		                                             &err);
 		if (xmms_error_iserror (&err)) {
-			g_free (login_data);
-			goto init_error;
+			return FALSE;
 		}
 
 		g_hash_table_insert (login_sessions, hash, login_data);
@@ -328,7 +324,7 @@ xmms_daap_init (xmms_xform_t *xform)
 	                                  login_data->revision_id,
 	                                  login_data->request_id);
 	if (!dbid_list) {
-		goto init_error;
+		return FALSE;
 	}
 
 	/* XXX: see XXX in the browse function above */
@@ -340,7 +336,7 @@ xmms_daap_init (xmms_xform_t *xform)
 	                                          login_data->request_id, dbid,
 	                                          command, &filesize);
 	if (! data->channel) {
-		goto init_error;
+		return FALSE;
 	}
 	login_data->request_id++;
 
@@ -359,14 +355,6 @@ xmms_daap_init (xmms_xform_t *xform)
 	g_free (command);
 
 	return TRUE;
-
-init_error:
-	if (data) {
-		if (data->host)
-			g_free (data->host);
-		g_free (data);
-	}
-	return FALSE;
 }
 
 static void

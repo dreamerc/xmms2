@@ -6,7 +6,7 @@
 
 import os, re
 import Utils, TaskGen, Task, Runner, Build
-from TaskGen import feature, before
+from TaskGen import taskgen, feature
 from Logs import error, warn, debug
 
 re_tex = re.compile(r'\\(?P<type>include|input|import|bringin){(?P<file>[^{}]*)}', re.M)
@@ -18,7 +18,9 @@ def scan(self):
 	names = []
 	if not node: return (nodes, names)
 
-	code = Utils.readf(node.abspath(env))
+	fi = open(node.abspath(env), 'r')
+	code = fi.read()
+	fi.close()
 
 	curdirnode = self.curdirnode
 	abs = curdirnode.abspath()
@@ -77,7 +79,9 @@ def tex_build(task, command='LATEX'):
 
 	# look in the .aux file if there is a bibfile to process
 	try:
-		ct = Utils.readf(aux_node.abspath(env))
+		file = open(aux_node.abspath(env), 'r')
+		ct = file.read()
+		file.close()
 	except (OSError, IOError):
 		error('error bibtex scan')
 	else:
@@ -148,13 +152,13 @@ class tex_taskgen(TaskGen.task_gen):
 	def __init__(self, *k, **kw):
 		TaskGen.task_gen.__init__(self, *k, **kw)
 
+@taskgen
 @feature('tex')
-@before('apply_core')
 def apply_tex(self):
-	if not getattr(self, 'type', None) in ['latex', 'pdflatex']:
-		self.type = 'pdflatex'
+	if not self.type in ['latex','pdflatex']:
+		raise Utils.WafError('type %s not supported for texobj' % type)
 
-	tree = self.bld
+	tree = Build.bld
 	outs = Utils.to_list(getattr(self, 'outs', []))
 
 	# prompt for incomplete files (else the batchmode is used)
@@ -168,17 +172,22 @@ def apply_tex(self):
 			n = self.path.find_resource(filename)
 			if not n in deps_lst: deps_lst.append(n)
 
-	self.source = self.to_list(self.source)
-	for filename in self.source:
+	for filename in self.source.split():
 		base, ext = os.path.splitext(filename)
 
 		node = self.path.find_resource(filename)
 		if not node: raise Utils.WafError('cannot find %s' % filename)
 
 		if self.type == 'latex':
-			task = self.create_task('latex', node, node.change_ext('.dvi'))
+			task = self.create_task('latex')
+			task.set_inputs(node)
+			task.set_outputs(node.change_ext('.dvi'))
 		elif self.type == 'pdflatex':
-			task = self.create_task('pdflatex', node, node.change_ext('.pdf'))
+			task = self.create_task('pdflatex')
+			task.set_inputs(node)
+			task.set_outputs(node.change_ext('.pdf'))
+		else:
+			raise Utils.WafError('no type or invalid type given in tex object (should be latex or pdflatex)')
 
 		task.env = self.env
 		task.curdirnode = self.path
@@ -196,13 +205,18 @@ def apply_tex(self):
 
 		if self.type == 'latex':
 			if 'ps' in outs:
-				self.create_task('dvips', task.outputs, node.change_ext('.ps'))
+				pstask = self.create_task('dvips')
+				pstask.set_inputs(task.outputs)
+				pstask.set_outputs(node.change_ext('.ps'))
 			if 'pdf' in outs:
-				self.create_task('dvipdf', task.outputs, node.change_ext('.pdf'))
+				pdftask = self.create_task('dvipdf')
+				pdftask.set_inputs(task.outputs)
+				pdftask.set_outputs(node.change_ext('.pdf'))
 		elif self.type == 'pdflatex':
 			if 'ps' in outs:
-				self.create_task('pdf2ps', task.outputs, node.change_ext('.ps'))
-	self.source = []
+				pstask = self.create_task('pdf2ps')
+				pstask.set_inputs(task.outputs)
+				pstask.set_outputs(node.change_ext('.ps'))
 
 def detect(conf):
 	v = conf.env
@@ -212,11 +226,11 @@ def detect(conf):
 	v['DVIPSFLAGS'] = '-Ppdf'
 
 b = Task.simple_task_type
-b('tex', '${TEX} ${TEXFLAGS} ${SRC}', color='BLUE', shell=False)
-b('bibtex', '${BIBTEX} ${BIBTEXFLAGS} ${SRC}', color='BLUE', shell=False)
-b('dvips', '${DVIPS} ${DVIPSFLAGS} ${SRC} -o ${TGT}', color='BLUE', after="latex pdflatex tex bibtex", shell=False)
-b('dvipdf', '${DVIPDF} ${DVIPDFFLAGS} ${SRC} ${TGT}', color='BLUE', after="latex pdflatex tex bibtex", shell=False)
-b('pdf2ps', '${PDF2PS} ${PDF2PSFLAGS} ${SRC} ${TGT}', color='BLUE', after="dvipdf pdflatex", shell=False)
+b('tex', '${TEX} ${TEXFLAGS} ${SRC}', color='BLUE')
+b('bibtex', '${BIBTEX} ${BIBTEXFLAGS} ${SRC}', color='BLUE')
+b('dvips', '${DVIPS} ${DVIPSFLAGS} ${SRC} -o ${TGT}', color='BLUE', after="latex pdflatex tex bibtex")
+b('dvipdf', '${DVIPDF} ${DVIPDFFLAGS} ${SRC} ${TGT}', color='BLUE', after="latex pdflatex tex bibtex")
+b('pdf2ps', '${PDF2PS} ${PDF2PSFLAGS} ${SRC} ${TGT}', color='BLUE', after="dvipdf pdflatex")
 b = Task.task_type_from_func
 cls = b('latex', latex_build, vars=latex_vardeps)
 cls.scan = scan

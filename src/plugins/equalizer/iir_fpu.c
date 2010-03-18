@@ -41,7 +41,7 @@ void set_gain(int index, int chn, float val)
   gain[index][chn] = val;
 }
 
-void clean_history(void)
+void clean_history()
 {
   int n;
   /* Zero the history arrays */

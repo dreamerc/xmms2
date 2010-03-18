@@ -570,7 +570,7 @@ xmms_apefile_read (xmms_xform_t *xform, xmms_sample_t *buffer,
                    gint len, xmms_error_t *err)
 {
 	xmms_apefile_data_t *data;
-	guint size;
+	guint size, ret;
 
 	g_return_val_if_fail (xform, -1);
 	data = xmms_xform_private_data_get (xform);
@@ -597,7 +597,7 @@ xmms_apefile_read (xmms_xform_t *xform, xmms_sample_t *buffer,
 	}
 
 	while (size == 0) {
-		gint framepos, framelength, framealign, nblocks, ret;
+		gint framepos, framelength, framealign, nblocks;
 
 		/* this is the beginning of a new frame */
 		xmms_xform_auxdata_barrier (xform);

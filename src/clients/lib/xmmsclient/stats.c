@@ -36,21 +36,16 @@
  * Get a list of loaded plugins from the server
  */
 xmmsc_result_t *
-xmmsc_main_list_plugins (xmmsc_connection_t *c, xmms_plugin_type_t type)
-{
-	x_check_conn (c, NULL);
-
-	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_MAIN, XMMS_IPC_CMD_PLUGIN_LIST,
-	                       XMMSV_LIST_ENTRY_INT (type), XMMSV_LIST_END);
-}
-
-/**
- * Get a list of loaded plugins from the server
- */
-xmmsc_result_t *
 xmmsc_plugin_list (xmmsc_connection_t *c, xmms_plugin_type_t type)
 {
-	return xmmsc_main_list_plugins (c, type);
+	xmms_ipc_msg_t *msg;
+
+	x_check_conn (c, NULL);
+
+	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MAIN, XMMS_IPC_CMD_PLUGIN_LIST);
+	xmms_ipc_msg_put_int32 (msg, type);
+
+	return xmmsc_send_msg (c, msg);
 }
 
 /**

@@ -24,7 +24,7 @@
 #include "command_trie.h"
 #include "alias.h"
 
-static gboolean
+gboolean
 cli_infos_autostart (cli_infos_t *infos, gchar *path)
 {
 	gint ret = 0;
@@ -66,9 +66,7 @@ void
 cli_infos_alias_end (cli_infos_t *infos)
 {
 	infos->alias_count--;
-	if (infos->status != CLI_ACTION_STATUS_FINISH &&
-	    infos->status != CLI_ACTION_STATUS_REFRESH &&
-	    infos->alias_count == 0) {
+	if (infos->status != CLI_ACTION_STATUS_FINISH && infos->alias_count == 0) {
 		infos->status = CLI_ACTION_STATUS_BUSY;
 	}
 	cli_infos_loop_resume (infos);
@@ -108,7 +106,7 @@ cli_infos_loop_stop (cli_infos_t *infos)
 }
 
 /* Called on server disconnection. We can keep the loop running. */
-static gint
+gint
 cli_infos_disconnect_callback (xmmsv_t *val, void *userdata)
 {
 	cli_infos_t *infos = (cli_infos_t *) userdata;
@@ -129,6 +127,7 @@ cli_infos_disconnect_callback (xmmsv_t *val, void *userdata)
 static void
 disconnect_callback (void *userdata)
 {
+	cli_infos_t *infos = (cli_infos_t *) userdata;
 	cli_infos_disconnect_callback (NULL, userdata);
 }
 
@@ -145,8 +144,7 @@ cli_infos_connect (cli_infos_t *infos, gboolean autostart)
 		return FALSE;
 	}
 
-	path = g_hash_table_lookup (infos->config->values, "ipcpath");
-
+	path = getenv ("XMMS_PATH");
 	if (!xmmsc_connect (infos->conn, path)) {
 		if (!autostart) {
 			/* Failed to connect, but don't autostart */
@@ -228,12 +226,6 @@ cli_infos_init (gint argc, gchar **argv)
 
 	if (argc == 0) {
 		infos->mode = CLI_EXECUTION_MODE_SHELL;
-		/* print welcome message before initialising readline */
-		if (configuration_get_boolean (infos->config, "SHELL_START_MESSAGE")) {
-			g_printf (_("Welcome to the nyxmms2 shell!\n"));
-			g_printf (_("Type 'help' to list the available commands "
-			            "and 'exit' (or CTRL-D) to leave the shell.\n"));
-		}
 		readline_init (infos);
 	} else {
 		infos->mode = CLI_EXECUTION_MODE_INLINE;

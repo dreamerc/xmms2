@@ -3,9 +3,12 @@ import Constants
 def build(bld):
     obj = bld.new_task_gen('cc', 'program')
     obj.target = 'xmms2-mlib-updater'
-    obj.source = "main.c"
+    obj.source = """
+        main.c
+        fam.c
+    """.split()
     obj.includes = '. ../../.. ../../include'
-    obj.uselib = 'glib2 GIO-2.0 GTHREAD-2.0'
+    obj.uselib = 'glib2 gamin'
     obj.uselib_local = 'xmmsclient-glib xmmsclient'
 
     obj = bld.new_task_gen('subst')
@@ -15,10 +18,9 @@ def build(bld):
     obj.chmod = Constants.O755
 
 def configure(conf):
-    conf.check_cfg(package="gio-2.0", args="--cflags --libs", mandatory=True)
-    conf.check_cfg(package="gthread-2.0", args="--cflags --libs", mandatory=True)
-
-    conf.check_cc(function_name="g_file_query_file_type", header_name="gio/gio.h", uselib="GIO-2.0")
+    if conf.check_cfg(package="gamin", uselib_store="gamin", args="--cflags --libs"):
+        return True
+    return False
 
 def set_options(opt):
     pass

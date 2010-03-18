@@ -11,8 +11,9 @@ def build(bld):
 
 def configure(conf):
     if not conf.env["CXX"]:
-        conf.fatal("No C++ compiler found")
+        return False
     conf.env.append_value('XMMS_PKGCONF_FILES', ('xmms2-client-cpp-glib', '-lxmmsclient-glib -lxmmsclient++-glib'))
+    return True
 
 def set_options(env):
     pass

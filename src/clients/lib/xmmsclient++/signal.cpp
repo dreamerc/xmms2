@@ -116,12 +116,7 @@ namespace Xmms
 	void disconnect_callback( void* userdata )
 	{
 
-		DisconnectCallback* temp = static_cast< DisconnectCallback* >( userdata );
-		for( DisconnectCallback::const_iterator i = temp->begin();
-			 i != temp->end(); ++i )
-		{
-			(*i)();
-		}
+		(*(static_cast< DisconnectCallback* >( userdata )))();
 
 	}
 

@@ -235,19 +235,16 @@ c_coll_idlist_set (VALUE self, VALUE ids)
 {
 	int i;
 	unsigned int *ary = NULL;
-	VALUE *rb_ary;
-	int rb_ary_len;
+	struct RArray *rb_ary = NULL;
 
 	Check_Type (ids, T_ARRAY);
 	COLL_METHOD_HANDLER_HEADER
 
-	rb_ary = RARRAY_PTR (ids);
-	rb_ary_len = RARRAY_LEN (ids);
+	rb_ary = RARRAY (ids);
+	ary = malloc (sizeof (unsigned int *) * (rb_ary->len + 1));
 
-	ary = malloc (sizeof (unsigned int *) * (rb_ary_len + 1));
-
-	for (i = 0; i < rb_ary_len; i++)
-		ary[i] = NUM2UINT (rb_ary[i]);
+	for (i = 0; i < rb_ary->len; i++)
+		ary[i] = NUM2UINT (rb_ary->ptr[i]);
 
 	ary[i] = 0;
 
@@ -394,21 +391,17 @@ c_attrs_delete (VALUE self, VALUE key)
 }
 
 static void
-attr_each (const char *key, xmmsv_t *value, void *udata)
+attr_each (const char *key, const char *value, void *udata)
 {
-	const char *s;
-
-	xmmsv_get_string (value, &s);
-
 	switch (XPOINTER_TO_INT (udata)) {
 		case EACH_PAIR:
-			rb_yield_values (2, rb_str_new2 (key), rb_str_new2 (s));
+			rb_yield_values (2, rb_str_new2 (key), rb_str_new2 (value));
 			break;
 		case EACH_KEY:
 			rb_yield_values (1, rb_str_new2 (key));
 			break;
 		case EACH_VALUE:
-			rb_yield_values (1, rb_str_new2 (s));
+			rb_yield_values (1, rb_str_new2 (value));
 			break;
 	}
 }
@@ -417,16 +410,13 @@ static VALUE
 c_attrs_each (VALUE self)
 {
 	RbCollection *coll = NULL;
-	xmmsv_t *attributes;
 	VALUE tmp;
 
 	tmp = rb_iv_get (self, "collection");
 	Data_Get_Struct (tmp, RbCollection, coll);
 
-	attributes = xmmsv_coll_attributes_get (coll->real);
-
-	xmmsv_dict_foreach (attributes, attr_each,
-	                    XINT_TO_POINTER (EACH_PAIR));
+	xmmsc_coll_attribute_foreach (coll->real, attr_each,
+	                               XINT_TO_POINTER (EACH_PAIR));
 
 	return self;
 }
@@ -435,16 +425,13 @@ static VALUE
 c_attrs_each_key (VALUE self)
 {
 	RbCollection *coll = NULL;
-	xmmsv_t *attributes;
 	VALUE tmp;
 
 	tmp = rb_iv_get (self, "collection");
 	Data_Get_Struct (tmp, RbCollection, coll);
 
-	attributes = xmmsv_coll_attributes_get (coll->real);
-
-	xmmsv_dict_foreach (attributes, attr_each,
-	                    XINT_TO_POINTER (EACH_KEY));
+	xmmsc_coll_attribute_foreach (coll->real, attr_each,
+	                               XINT_TO_POINTER (EACH_KEY));
 
 	return self;
 }
@@ -453,16 +440,13 @@ static VALUE
 c_attrs_each_value (VALUE self)
 {
 	RbCollection *coll = NULL;
-	xmmsv_t *attributes;
 	VALUE tmp;
 
 	tmp = rb_iv_get (self, "collection");
 	Data_Get_Struct (tmp, RbCollection, coll);
 
-	attributes = xmmsv_coll_attributes_get (coll->real);
-
-	xmmsv_dict_foreach (attributes, attr_each,
-	                    XINT_TO_POINTER (EACH_VALUE));
+	xmmsc_coll_attribute_foreach (coll->real, attr_each,
+	                               XINT_TO_POINTER (EACH_VALUE));
 
 	return self;
 }

@@ -29,8 +29,8 @@
 xmmsc_connection_t *x_connection;
 int x_vis;
 
-static void
-xmms2_quit (void)
+void
+xmms2_quit ()
 {
 	xmmsc_visualization_shutdown (x_connection, x_vis);
 	if (x_connection) {
@@ -38,12 +38,9 @@ xmms2_quit (void)
 	}
 }
 
-static void
-xmms2_init (void)
+void xmms2_init ()
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	char *path = getenv ("XMMS_PATH");
 	xmmsv_t *cfg;
 
@@ -56,9 +53,8 @@ xmms2_init (void)
 
 	res = xmmsc_visualization_init (x_connection);
 	xmmsc_result_wait (res);
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		x_exit (errmsg);
+	if (xmmsc_result_iserror (res)) {
+		x_exit (xmmsc_result_get_error (res));
 	}
 	x_vis = xmmsc_visualization_init_handle (res);
 
@@ -68,12 +64,10 @@ xmms2_init (void)
 
 	res = xmmsc_visualization_properties_set (x_connection, x_vis, cfg);
 	xmmsc_result_wait (res);
-	val = xmmsc_result_get_value(res);
-	if (xmmsv_get_error(val, &errmsg)) {
-		x_exit (errmsg);
+	if (xmmsc_result_iserror (res)) {
+		x_exit (xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
-	xmmsv_unref (cfg);
 
 	while (!xmmsc_visualization_started (x_connection, x_vis)) {
 		res = xmmsc_visualization_start (x_connection, x_vis);
@@ -96,21 +90,21 @@ xmms2_init (void)
 SDL_Surface *screen = 0;
 SDL_Color    pal[256];
 
-static void sdl_init(void);
-static int sdl_event_handler(void);
-static void sdl_quit(void);
+void sdl_init();
+int sdl_event_handler();
+void sdl_quit();
 
-static inline void sdl_lock(void) { if( SDL_MUSTLOCK( screen ) == SDL_TRUE ) SDL_LockSurface( screen ); }
-static inline void sdl_unlock(void) { if( SDL_MUSTLOCK( screen ) == SDL_TRUE ) SDL_UnlockSurface( screen ); }
+inline void   sdl_lock() { if( SDL_MUSTLOCK( screen ) == SDL_TRUE ) SDL_LockSurface( screen ); }
+inline void sdl_unlock() { if( SDL_MUSTLOCK( screen ) == SDL_TRUE ) SDL_UnlockSurface( screen ); }
 
-static inline int
-sdl_isFullScreen(void)
+inline int
+sdl_isFullScreen()
 {
 	return (screen->flags & SDL_FULLSCREEN) > 0;
 }
 
-static inline void
-sdl_toggleFullScreen(void)
+inline void
+sdl_toggleFullScreen()
 {
 	SDL_WM_ToggleFullScreen( screen );
 	SDL_ShowCursor( (screen->flags & SDL_FULLSCREEN) > 0 ? SDL_DISABLE : SDL_ENABLE );
@@ -126,11 +120,11 @@ struct {
 	int16_t     pcm_data[1024];
 } v;
 
-static void v_init (int, char**);
-static uint v_render (void);
-static void v_resize (int, int);
+void v_init (int, char**);
+uint v_render ();
+void v_resize (int, int);
 
-static void
+void
 v_cycleActor (int prev)
 {
 	v.plugin = (prev ? visual_actor_get_prev_by_name (v.plugin)
@@ -176,7 +170,7 @@ main (int argc, char** argv)
 }
 
 void
-sdl_init (void)
+sdl_init ()
 {
 	if (SDL_Init(SDL_INIT_VIDEO))
 	{
@@ -186,7 +180,7 @@ sdl_init (void)
 }
 
 void
-sdl_quit (void)
+sdl_quit ()
 {
 	//FIXME crashes!
 	//visual_bin_destroy( v.bin );
@@ -196,8 +190,8 @@ sdl_quit (void)
 	SDL_Quit();
 }
 
-static inline void
-sdl_set_pal(void)
+inline void
+sdl_set_pal()
 {
 	if (v.pal) {
 		int i;
@@ -210,7 +204,7 @@ sdl_set_pal(void)
 	SDL_SetColors( screen, pal, 0, 256 );
 }
 
-static void
+void
 sdl_create (int width, int height) {
 	SDL_FreeSurface (screen);
 
@@ -237,7 +231,7 @@ sdl_create (int width, int height) {
 }
 
 int
-sdl_event_handler(void)
+sdl_event_handler()
 {
 	SDL_Event event;
 	VisEventQueue *vevent;
@@ -323,7 +317,7 @@ sdl_event_handler(void)
 }
 
 
-static int
+int
 v_upload_callback (VisInput* input, VisAudio *audio, void* unused)
 {
 	VisBuffer buf;
@@ -413,7 +407,7 @@ v_init (int argc, char **argv)
 }
 
 uint
-v_render(void)
+v_render()
 {
 	/* On depth change */
 	if (visual_bin_depth_changed (v.bin)) {

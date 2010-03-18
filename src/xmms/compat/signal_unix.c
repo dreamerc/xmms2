@@ -33,7 +33,6 @@
 #include <glib.h>
 #include <unistd.h>
 
-static sigset_t osignals;
 
 static gpointer
 sigwaiter (gpointer data)
@@ -43,7 +42,7 @@ sigwaiter (gpointer data)
 	sigset_t signals;
 	int caught;
 
-	sigemptyset(&signals);
+	memset (&signals, 0, sizeof (sigset_t));
 	sigaddset (&signals, SIGINT);
 	sigaddset (&signals, SIGTERM);
 
@@ -71,20 +70,14 @@ xmms_signal_block (void)
 {
 	sigset_t signals;
 
-	sigemptyset(&signals);
+	memset (&signals, 0, sizeof (sigset_t));
 
 	sigaddset (&signals, SIGHUP);
 	sigaddset (&signals, SIGTERM);
 	sigaddset (&signals, SIGINT);
 	sigaddset (&signals, SIGPIPE);
 
-	pthread_sigmask (SIG_BLOCK, &signals, &osignals);
-}
-
-void
-xmms_signal_restore (void)
-{
-	pthread_sigmask (SIG_SETMASK, &osignals, NULL);
+	pthread_sigmask (SIG_BLOCK, &signals, NULL);
 }
 
 void

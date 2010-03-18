@@ -212,23 +212,18 @@ xmmsc_result_parse_msg (xmmsc_result_t *res, xmms_ipc_msg_t *msg)
 	if (xmms_ipc_msg_get_cmd (msg) == XMMS_IPC_CMD_ERROR) {
 		/* If special error msg, extract the error and save in result */
 		char *errstr;
-		xmmsv_t *error;
+		uint32_t len;
 
-		if (!xmms_ipc_msg_get_value (msg, &error)) {
-			xmmsc_result_seterror (res, "No error value!");
+		if (!xmms_ipc_msg_get_string_alloc (msg, &errstr, &len)) {
+			xmmsc_result_seterror (res, "No errormsg!");
 		} else {
-			if (!xmmsv_get_error (error, &errstr)) {
-				xmmsc_result_seterror (res, "No error message!");
-			} else {
-				xmmsc_result_seterror (res, errstr);
-			}
-
-			xmmsv_unref (error);
+			xmmsc_result_seterror (res, errstr);
+			free (errstr);
 		}
 
 		res->parsed = true;
 		return true;
-	} else if (xmms_ipc_msg_get_value (msg, &res->data)) {
+	} else if (xmms_ipc_msg_get_value_alloc (msg, &res->data)) {
 		/* Expected message data retrieved! */
 		res->parsed = true;
 		return true;
@@ -412,6 +407,7 @@ void
 xmmsc_result_run (xmmsc_result_t *res, xmms_ipc_msg_t *msg)
 {
 	x_list_t *n, *next;
+	int cmd;
 	xmmsc_result_callback_t *cb;
 
 	x_return_if_fail (res);
@@ -422,6 +418,8 @@ xmmsc_result_run (xmmsc_result_t *res, xmms_ipc_msg_t *msg)
 		return;
 	}
 
+	cmd = xmms_ipc_msg_get_cmd (msg);
+
 	xmms_ipc_msg_destroy (msg);
 
 	xmmsc_result_ref (res);
@@ -429,13 +427,10 @@ xmmsc_result_run (xmmsc_result_t *res, xmms_ipc_msg_t *msg)
 	/* Run all notifiers and check for positive return values */
 	n = res->notifiers;
 	while (n) {
-		int keep;
-
 		next = x_list_next (n);
 		cb = n->data;
 
-		keep = cb->func (res->data, cb->user_data);
-		if (!keep || res->type == XMMSC_RESULT_CLASS_DEFAULT) {
+		if (!cb->func (res->data, cb->user_data)) {
 			xmmsc_result_notifier_delete (res, n);
 		}
 
@@ -445,12 +440,12 @@ xmmsc_result_run (xmmsc_result_t *res, xmms_ipc_msg_t *msg)
 	/* If this result is a signal, and we still have some notifiers
 	 * we need to restart the signal.
 	 */
-	if (res->notifiers && res->type == XMMSC_RESULT_CLASS_SIGNAL) {
+	if (res->notifiers && cmd == XMMS_IPC_CMD_SIGNAL) {
 		/* We restart the signal using the same result. */
 		xmmsc_result_restart (res);
 	}
 
-	if (res->type == XMMSC_RESULT_CLASS_BROADCAST) {
+	if (cmd == XMMS_IPC_CMD_BROADCAST) {
 		/* We keep the results alive with broadcasts, but we
 		   just renew the value because it went out of scope.
 		   (freeing the payload, forget about it) */

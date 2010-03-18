@@ -201,6 +201,17 @@ int_get (xmmsv_t *val)
 }
 
 static VALUE
+uint_get (xmmsv_t *val)
+{
+	uint32_t id = 0;
+
+	if (!xmmsv_get_uint (val, &id))
+		rb_raise (eValueError, "cannot retrieve value");
+
+	return UINT2NUM (id);
+}
+
+static VALUE
 string_get (xmmsv_t *val)
 {
 	const char *s = NULL;
@@ -305,17 +316,13 @@ static VALUE
 c_get_error (VALUE self)
 {
 	RbResult *res;
-	xmmsv_t *val;
 	const char *error;
-	int ret;
 
 	Data_Get_Struct (self, RbResult, res);
 
-	val = xmmsc_result_get_value (res->real);
+	error = xmmsc_result_get_error (res->real);
 
-	ret = xmmsv_get_error (val, &error);
-
-	return rb_str_new2 (ret ? error : "");
+	return rb_str_new2 (error ? error : "");
 }
 
 #ifdef HAVE_RB_PROTECT_INSPECT

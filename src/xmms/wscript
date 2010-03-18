@@ -32,6 +32,7 @@ source = """
     segment_plugin.c
     ringbuf_xform.c
     outputplugin.c
+    strfunc.c
     bindata.c
     sample.genpy
     utils.c
@@ -43,30 +44,6 @@ source = """
 
 def build(bld):
     env = bld.env
-
-    ipc_object_files = """
-        bindata
-        collection
-        config
-        main
-        mediainfo
-        medialib
-        output
-        playlist
-        visualization/object
-        xform
-    """.split()
-
-    for ipc_object_file in ipc_object_files:
-        python_script = ipc_object_file + '_ipc.py'
-        c_file = ipc_object_file + '_ipc.c'
-
-        bld.new_task_gen(
-            source=['../ipc.xml', python_script],
-            target=c_file,
-            rule='${PYTHON} ${SRC[1].abspath()} > ${TGT}',
-            before='cc',
-        )
 
     prog = bld.new_task_gen('cc', 'program')
     prog.target = 'xmms2d'
@@ -87,7 +64,7 @@ def build(bld):
         lib = bld.new_task_gen('cc', 'shlib')
         lib.target = 'xmms2core'
         lib.source = source
-        lib.includes = '. ../.. ../include ../includepriv'
+        lib.includes = '. ../include ../includepriv'
         lib.uselib = 'glib2 gmodule2 gthread2 sqlite3 statfs socket shm'
         lib.uselib_local = 'xmmsipc xmmssocket xmmsutils xmmstypes xmmsvisualization'
 

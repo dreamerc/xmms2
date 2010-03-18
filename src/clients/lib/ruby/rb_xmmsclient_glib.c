@@ -22,8 +22,6 @@
 
 #include "rb_xmmsclient.h"
 
-void Init_xmmsclient_glib (void);
-
 static VALUE
 c_add_to_glib_mainloop (VALUE self)
 {

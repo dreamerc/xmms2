@@ -25,8 +25,6 @@
 #include "utils.h"
 #include "column_display.h"
 
-#include <sys/stat.h>
-
 #define COMMAND_HELP_DESCRIPTION_INDENT 2
 
 #define NULL_SUB(elem, null, notnull) (elem) == NULL ? (null) : (notnull)
@@ -65,7 +63,7 @@ CLI_SIMPLE_SETUP("pause", cli_pause,
                  NULL,
                  _("Pause playback."))
 CLI_SIMPLE_SETUP("toggle", cli_toggle, /* <<<<< */
-                 COMMAND_REQ_CONNECTION | COMMAND_REQ_CACHE,
+                 COMMAND_REQ_CONNECTION,
                  NULL,
                  _("Toggle playback."))
 CLI_SIMPLE_SETUP("seek", cli_seek,
@@ -200,13 +198,16 @@ void
 cli_search_setup (command_action_t *action)
 {
 	const argument_t flags[] = {
+		{ "playlist",   'p', 0, G_OPTION_ARG_STRING, NULL, _("Search in the given playlist."), "name" },
+		{ "collection", 'c', 0, G_OPTION_ARG_STRING, NULL, _("Search in the given collection."), "name" },
 		{ "order",   'o', 0, G_OPTION_ARG_STRING, NULL, _("List of properties to order by (prefix by '-' for reverse ordering)."), "prop1[,prop2...]" },
 		{ "columns", 'l', 0, G_OPTION_ARG_STRING, NULL, _("List of properties to use as columns."), "prop1[,prop2...]" },
 		{ NULL }
 	};
 	command_action_fill (action, "search", &cli_search, COMMAND_REQ_CONNECTION, flags,
-	                     _("[-o <prop1[,prop2...]>] [-l <prop1[,prop2...]>] <pattern>"),
-	                     _("Search and print all media matching the pattern."));
+	                     _("[-p <name> | -c <name>] [-o <prop1[,prop2...]>] [-l <prop1[,prop2...]>] <pattern>"),
+	                     _("Search and print all media matching the pattern. Search can be restricted\n"
+	                       "to a collection or a playlist by using the corresponding flag."));
 }
 
 void
@@ -239,7 +240,7 @@ cli_add_setup (command_action_t *action)
 		{ NULL }
 	};
 	command_action_fill (action, "add", &cli_add, COMMAND_REQ_CONNECTION | COMMAND_REQ_CACHE, flags,
-	                     _("[-t | -f [-N] [-P]] [-p <playlist>] [-n | -a <pos|offset>] [pattern | paths]"),
+	                     _("[-f [-N] [-P]] [-p <playlist> | -c <collection>] [-n | -a <pos|offset>] [pattern | paths]"),
 	                     _("Add the matching media or files to a playlist."));
 }
 
@@ -312,13 +313,12 @@ void
 cli_pl_sort_setup (command_action_t *action)
 {
 	const argument_t flags[] = {
-		{ "playlist", 'p', 0, G_OPTION_ARG_STRING, NULL, _("Rename the given playlist."), "name" },
+		{ "order",    'o', 0, G_OPTION_ARG_STRING, NULL, _("List of properties to sort by (prefix by '-' for reverse sorting)."), "prop1[,prop2...]" },
 		{ NULL }
 	};
 	command_action_fill (action, "playlist sort", &cli_pl_sort, COMMAND_REQ_CONNECTION | COMMAND_REQ_CACHE, flags,
-	                     _("[-p <playlist>] [prop1 [prop2 [...]]]"),
-	                     _("Sort a playlist by a list of properties.  By default, sort the active playlist.\n"
-						   "To sort by a property in reverse, prefix its name by a '-'."));
+	                     _("[-o <order>] [playlist]"),
+	                     _("Sort a playlist.  By default, sort the active playlist."));
 }
 
 void
@@ -424,12 +424,12 @@ cli_server_volume_setup (command_action_t *action)
 	                     "By default, the command applies to all audio channels. Use the --channel flag to override this behaviour."));
 }
 
-static void
+void
 fill_column_display (cli_infos_t *infos, column_display_t *disp,
                      const gchar **columns)
 {
 	gint i;
-	const gchar *nextsep = NULL;
+	gchar *nextsep = NULL;
 
 	for (i = 0; columns[i]; ++i) {
 		/* Separator between columns */
@@ -457,7 +457,7 @@ fill_column_display (cli_infos_t *infos, column_display_t *disp,
 			                            COLUMN_DEF_SIZE_FIXED,
 			                            COLUMN_DEF_ALIGN_LEFT,
 			                            column_display_render_highlight);
-			nextsep = NULL;
+			nextsep = FALSE;
 		} else if (strcmp (columns[i], "next") == 0) {
 			int currpos = infos->cache->currpos;
 			/* If no currpos, start counting from the beginning */
@@ -477,7 +477,7 @@ fill_column_display (cli_infos_t *infos, column_display_t *disp,
 	}
 }
 
-static column_display_t *
+column_display_t *
 create_column_display (cli_infos_t *infos, command_context_t *ctx,
                        const gchar **default_columns)
 {
@@ -485,11 +485,6 @@ create_column_display (cli_infos_t *infos, command_context_t *ctx,
 	column_display_t *coldisp;
 
 	coldisp = column_display_init (infos);
-
-	column_display_set_list_marker (coldisp,
-	                                configuration_get_string (infos->config,
-	                                                          "PLAYLIST_MARKER"));
-
 	command_flag_stringlist_get (ctx, "columns", &columns);
 	if (columns) {
 		fill_column_display (infos, coldisp, columns);
@@ -502,7 +497,7 @@ create_column_display (cli_infos_t *infos, command_context_t *ctx,
 	return coldisp;
 }
 
-static column_display_t *
+column_display_t *
 create_list_column_display (cli_infos_t *infos)
 {
 	column_display_t *coldisp;
@@ -513,10 +508,6 @@ create_list_column_display (cli_infos_t *infos)
 	/* FIXME: compute field size dynamically instead of hardcoding maxlen? */
 
 	coldisp = column_display_init (infos);
-
-	column_display_set_list_marker (coldisp,
-	                                configuration_get_string (infos->config,
-	                                                          "PLAYLIST_MARKER"));
 
 	column_display_add_special (coldisp, "",
 	                            GINT_TO_POINTER(infos->cache->currpos), 2,
@@ -609,9 +600,9 @@ cli_seek (cli_infos_t *infos, command_context_t *ctx)
 
 	if (command_arg_time_get (ctx, 0, &t)) {
 		if (t.type == COMMAND_ARG_TIME_OFFSET) {
-			res = xmmsc_playback_seek_ms (infos->sync, t.value.offset * 1000, XMMS_PLAYBACK_SEEK_CUR);
+			res = xmmsc_playback_seek_ms_rel (infos->sync, t.value.offset * 1000);
 		} else {
-			res = xmmsc_playback_seek_ms (infos->sync, t.value.pos * 1000, XMMS_PLAYBACK_SEEK_SET);
+			res = xmmsc_playback_seek_ms (infos->sync, t.value.pos * 1000);
 		}
 
 		xmmsc_result_wait (res);
@@ -749,7 +740,7 @@ cli_list (cli_infos_t *infos, command_context_t *ctx)
 {
 	gchar *pattern = NULL;
 	xmmsv_coll_t *query = NULL, *filter = NULL, *pl;
-	xmmsc_result_t *res;
+	xmmsc_result_t *res, *inres = NULL;
 	column_display_t *coldisp;
 	playlist_positions_t *positions;
 	gint pos;
@@ -889,8 +880,8 @@ cmd_flag_pos_get (cli_infos_t *infos, command_context_t *ctx, gint *pos)
 			*pos = at - 1;  /* playlist ids start at 0 */
 		}
 	} else {
-		/* No flag given, no position found! */
-		return FALSE;
+		/* No flag given, just enqueue */
+		*pos = infos->cache->active_playlist->len;
 	}
 
 	return TRUE;
@@ -903,7 +894,7 @@ url_isdir (cli_infos_t *infos, const gchar *const url)
 {
 	xmmsc_result_t *res;
 	xmmsv_t *val, *entry;
-	gchar *p, *path, *urls = NULL, *fullurl, *scheme, *filename;
+	gchar *p, *path, *urls = NULL, *fullurl, *scheme;
 	const gchar *cpath;
 	gint ret = 0;
 
@@ -919,7 +910,6 @@ url_isdir (cli_infos_t *infos, const gchar *const url)
 
 	ret = strlen (urls);
 	if (ret && urls[ret - 1] == '/') {
-		g_free (p);
 		return 1;
 	}
 	ret = 0;
@@ -935,7 +925,6 @@ url_isdir (cli_infos_t *infos, const gchar *const url)
 	 * scheme and path part back together
 	 */
 	path = g_path_get_dirname (urls);
-	filename = g_path_get_basename (urls);
 	fullurl = g_strconcat (scheme, urls, NULL);
 	urls = g_strconcat (scheme, path, NULL);
 	g_free (path);
@@ -948,29 +937,20 @@ url_isdir (cli_infos_t *infos, const gchar *const url)
 
 	if (!xmmsv_is_error (val)) {
 		xmmsv_list_iter_t *it;
-
-		/* the xform browsing doesn't return '.' and '..' entries, so
-		 * we check them here once we know the parent directory is
-		 * valid
-		 */
-		if (!strcmp (filename, ".") || !strcmp (filename, "..")) {
-			ret = 1;
-		}
-
 		xmmsv_get_list_iter (val, &it);
 		for (xmmsv_list_iter_first (it);
-		     xmmsv_list_iter_valid (it) && !ret;
+		     xmmsv_list_iter_valid (it);
 		     xmmsv_list_iter_next (it)) {
 
 			xmmsv_list_iter_entry (it, &entry);
 			xmmsv_dict_entry_get_string (entry, "path", &cpath);
 			if (!strcmp (cpath, fullurl)) {
 				xmmsv_dict_entry_get_int (entry, "isdir", &ret);
+				break;
 			}
 		}
 	}
 
-	g_free (filename);
 	g_free (fullurl);
 	g_free (urls);
 	xmmsc_result_unref (res);
@@ -1037,24 +1017,6 @@ matching_browse (cli_infos_t *infos, const gchar *done,
 				g_free (npath);
 			}
 		}
-	} else if (s) {
-		/* Clientlib doesn't support URLs with an unencoded '*' */
-		GString *str = g_string_new (path);
-		browse_entry_t *entry = g_new0 (browse_entry_t, 1);
-
-		while ((s = strchr (str->str, '*'))) {
-			g_string_erase (str, s - str->str, 1);
-			g_string_insert (str, s - str->str, "%2a");
-		}
-
-		entry->url = str->str;
-		entry->isdir = FALSE;
-
-		g_string_free (str, FALSE);
-
-		*files = g_list_prepend (*files, entry);
-
-		return TRUE;
 	} else {
 		return FALSE;
 	}
@@ -1122,6 +1084,51 @@ encode_url (gchar *url)
 	return res;
 }
 
+gchar *
+decode_url (const gchar *string)
+{
+	gint i = 0, j = 0;
+	gchar *url;
+
+	url = g_strdup (string);
+	if (!url)
+		return NULL;
+
+	while (url[i]) {
+		guchar chr = url[i++];
+
+		if (chr == '+') {
+			chr = ' ';
+		} else if (chr == '%') {
+			gchar ts[3];
+			gchar *t;
+
+			ts[0] = url[i++];
+			if (!ts[0])
+				goto err;
+			ts[1] = url[i++];
+			if (!ts[1])
+				goto err;
+			ts[2] = '\0';
+
+			chr = strtoul (ts, &t, 16);
+
+			if (t != &ts[2])
+				goto err;
+		}
+
+		url[j++] = chr;
+	}
+
+	url[j] = '\0';
+
+	return url;
+
+ err:
+	g_free (url);
+	return NULL;
+}
+
 static gboolean
 guesspls (cli_infos_t *infos, gchar *url)
 {
@@ -1140,15 +1147,11 @@ static gboolean
 guessfile (gchar *pattern)
 {
 	char *p;
-	struct stat filestat;
-
-	/* if matches a local path, it's probably a file */
-	if (stat (pattern, &filestat) == 0 &&
-	    (S_ISREG(filestat.st_mode) || S_ISDIR(filestat.st_mode))) {
-		return TRUE;
-	}
 
 	p = strpbrk (pattern, ":/~");
+
+	/* FIXME: check for file extension? esp. if token doesn't start by "url:" */
+	/* FIXME: warning, the string contains all space-separated arguments */
 
 	if (!p) {
 		/* Doesn't contain any of the chars above, not a file? */
@@ -1198,8 +1201,8 @@ cli_add (cli_infos_t *infos, command_context_t *ctx)
 	/* FIXME: pos is wrong in non-active playlists (next/offsets are invalid)! */
 	/* FIXME: offsets not supported (need to identify positive offsets) :-( */
 	if (!cmd_flag_pos_get (infos, ctx, &pos)) {
-		/* append by default */
-		pos = infos->cache->active_playlist->len;
+		success = FALSE;
+		goto finish;
 	}
 
 	command_flag_boolean_get (ctx, "pattern", &forceptrn);
@@ -1222,16 +1225,7 @@ cli_add (cli_infos_t *infos, command_context_t *ctx)
 		goto finish;
 	}
 
-	fileargs = fileargs || plsfile;
-
-	if (!forceptrn) {
-		/* if any of the arguments is a valid path, we treat them all as files */
-		for (i = 0, count = command_arg_count (ctx); !fileargs && i < count; ++i) {
-			command_arg_string_get (ctx, i, &path);
-			fileargs = fileargs || guessfile (path);
-		}
-	}
-
+	fileargs = fileargs || plsfile || (guessfile (pattern) && !forceptrn);
 	if (fileargs) {
 		for (i = 0, count = command_arg_count (ctx); i < count; ++i) {
 			GList *files = NULL, *it;
@@ -1264,7 +1258,6 @@ cli_add (cli_infos_t *infos, command_context_t *ctx)
 					xmmsc_result_wait (res);
 					xmmsc_result_unref (res);
 				}
-				pos++; /* next insert at next pos, to keep order */
 				g_free (entry->url);
 				g_free (entry);
 			}
@@ -1540,19 +1533,16 @@ cli_pl_shuffle (cli_infos_t *infos, command_context_t *ctx)
 {
 	xmmsc_result_t *res;
 	gchar *playlist;
-	gboolean free_playlist = TRUE;
 
 	if (!command_arg_longstring_get (ctx, 0, &playlist)) {
 		playlist = infos->cache->active_playlist_name;
-		free_playlist = FALSE;
 	}
 
 	res = xmmsc_playlist_shuffle (infos->sync, playlist);
 	xmmsc_result_wait (res);
 	done (res, infos);
 
-	if (free_playlist)
-		g_free (playlist);
+	g_free (playlist);
 
 	return TRUE;
 }
@@ -1563,25 +1553,26 @@ cli_pl_sort (cli_infos_t *infos, command_context_t *ctx)
 	xmmsc_result_t *res;
 	xmmsv_t *orderval;
 	gchar *playlist;
-	gchar **order = NULL;
-	const gchar *default_order[] = { "artist", "album", "tracknr", NULL};
+	const gchar **order = NULL;
 
-	if (!command_flag_string_get (ctx, "playlist", &playlist)) {
-		playlist = XMMS_ACTIVE_PLAYLIST;
+	if (!command_arg_longstring_get (ctx, 0, &playlist)) {
+		playlist = g_strdup (infos->cache->active_playlist_name);
 	}
 
-	if (command_arg_count (ctx) == 0) {
-		order = default_order;
-	} else {
-		order = command_argv_get (ctx);
+	if (!command_flag_stringlist_get (ctx, "order", &order)) {
+		/* FIXME: Default ordering */
+		g_free (playlist);
+		return FALSE;
 	}
 
-	orderval = xmmsv_make_stringlist (order, -1);
+	orderval = xmmsv_make_stringlist ((gchar **)order, -1);
 	res = xmmsc_playlist_sort (infos->sync, playlist, orderval);
 	xmmsc_result_wait (res);
 	done (res, infos);
 
 	xmmsv_unref (orderval);
+	g_free (playlist);
+	g_free (order);
 
 	return TRUE;
 }
@@ -1943,7 +1934,7 @@ cli_server_import (cli_infos_t *infos, command_context_t *ctx)
 				xmmsc_result_wait (res);
 				xmmsc_result_unref (res);
 			} else {
-				res = xmmsc_medialib_import_path_encoded (infos->sync,
+				res = xmmsc_medialib_path_import_encoded (infos->sync,
 				                                          entry->url);
 				xmmsc_result_wait (res);
 				xmmsc_result_unref (res);
@@ -2044,11 +2035,11 @@ cli_server_config (cli_infos_t *infos, command_context_t *ctx)
 	}
 
 	if (confval) {
-		res = xmmsc_config_set_value (infos->sync, confname, confval);
+		res = xmmsc_configval_set (infos->sync, confname, confval);
 		xmmsc_result_wait (res);
 		done (res, infos);
 	} else {
-		print_config (infos, confname);
+		print_config (infos, res, confname);
 	}
 
 	return TRUE;
@@ -2157,7 +2148,7 @@ cli_server_plugins (cli_infos_t *infos, command_context_t *ctx)
 {
 	xmmsc_result_t *res;
 
-	res = xmmsc_main_list_plugins (infos->sync, XMMS_PLUGIN_TYPE_ALL);
+	res = xmmsc_plugin_list (infos->sync, XMMS_PLUGIN_TYPE_ALL);
 	xmmsc_result_wait (res);
 	list_plugins (infos, res);
 
@@ -2218,10 +2209,9 @@ cli_server_shutdown (cli_infos_t *infos, command_context_t *ctx)
 {
 	xmmsc_result_t *res;
 
-	if (infos->sync) {
-		res = xmmsc_quit (infos->sync);
-		xmmsc_result_wait (res);
-		done (res, infos);
+	if (infos->conn) {
+		res = xmmsc_quit (infos->conn);
+		xmmsc_result_unref (res);
 	} else {
 		return FALSE;
 	}
@@ -2314,7 +2304,7 @@ help_command (cli_infos_t *infos, GList *cmdnames, gchar **cmd, gint num_args,
 	                                                    "AUTO_UNIQUE_COMPLETE");
 
 	match = command_trie_find (infos->commands, &argv, &argc,
-	                           auto_complete, &action, NULL);
+	                           auto_complete, &action);
 	if (match == COMMAND_TRIE_MATCH_ACTION) {
 		g_printf (_("usage: %s"), action->name);
 		if (action->usage) {

@@ -7,11 +7,6 @@ def build(bld):
     obj.target = 'xmmsapi'
     obj.includes = '../../../.. ../../../include ../../../includepriv .'
     obj.source = ['xmmsapi.pyx']
-
-    # the generated c code will throw an estimated 1000 warnings
-    # if we compile with -Wwrite-strings. so don't.
-    obj.uselib = 'NOWRITESTRINGS'
-
     obj.uselib_local = 'xmmsclient'
     obj.install_path = "${xmmsclient_PYTHONDIR}"
     obj.mac_bundle = True
@@ -27,10 +22,13 @@ def build(bld):
 def configure(conf):
     conf.check_tool('python')
     if not conf.env['PYTHON']:
-        conf.fatal("python not found")
+        return False
 
-    conf.check_python_version()
-    conf.check_python_headers()
+    try:
+        conf.check_python_version()
+        conf.check_python_headers()
+    except Configure.ConfigurationError:
+        return False
 
     conf.env['xmmsclient_PYTHONDIR'] = conf.env['PYTHONDIR'] + '/xmmsclient'
 
@@ -43,7 +41,9 @@ def configure(conf):
 
     conf.check_tool('pyrexc', tooldir=os.path.abspath('waftools'))
     if not conf.env['PYREX']:
-        conf.fatal("pyrexc not found")
+        return False
+
+    return True
 
 def set_options(opt):
     pass

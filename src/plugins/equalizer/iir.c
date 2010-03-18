@@ -49,7 +49,7 @@ void set_preamp(int chn, float val)
 }
 
 /* Init the filters */
-void init_iir(void)
+void init_iir()
 {
   calc_coeffs();
 }

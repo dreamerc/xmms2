@@ -19,9 +19,7 @@
 
 #include <ruby.h>
 
-void Init_Client (VALUE);
-
-void Init_xmmsclient_ext (void);
+void Init_Client ();
 
 /*
  * call-seq:

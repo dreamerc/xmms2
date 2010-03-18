@@ -22,24 +22,21 @@ static void
 do_reljump (xmmsc_connection_t *conn, gint where)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	res = xmmsc_playlist_set_next_rel (conn, where);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't advance in playlist: %s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't advance in playlist: %s",
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 
 	res = xmmsc_playback_tickle (conn);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("%s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("%s", xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -51,14 +48,14 @@ cmd_toggleplay (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	int32_t status;
 	xmmsc_result_t *res;
 	xmmsv_t *val;
-	const char *errmsg;
 
 	res = xmmsc_playback_status (conn);
 	xmmsc_result_wait (res);
 	val = xmmsc_result_get_value (res);
 
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't get playback status: %s", errmsg);
+	if (xmmsv_is_error (val)) {
+		print_error ("Couldn't get playback status: %s",
+		             xmmsv_get_error_old (val));
 	}
 
 	if (!xmmsv_get_int (val, &status)) {
@@ -79,15 +76,13 @@ void
 cmd_play (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	res = xmmsc_playback_start (conn);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't start playback: %s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't start playback: %s",
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -96,15 +91,13 @@ void
 cmd_stop (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	res = xmmsc_playback_stop (conn);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't stop playback: %s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't stop playback: %s",
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -114,15 +107,13 @@ void
 cmd_pause (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	res = xmmsc_playback_pause (conn);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't pause playback: %s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't pause playback: %s",
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -146,8 +137,6 @@ void
 cmd_seek (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 	long arg;
 	gchar *endptr = NULL;
 
@@ -170,15 +159,15 @@ cmd_seek (xmmsc_connection_t *conn, gint argc, gchar **argv)
 		if (!arg) {
 			return;
 		}
-		res = xmmsc_playback_seek_ms (conn, arg, XMMS_PLAYBACK_SEEK_CUR);
+		res = xmmsc_playback_seek_ms_rel (conn, arg);
 	} else {
-		res = xmmsc_playback_seek_ms (conn, arg, XMMS_PLAYBACK_SEEK_SET);
+		res = xmmsc_playback_seek_ms (conn, arg);
 	}
 
 	xmmsc_result_wait (res);
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't seek to %d arg: %s", arg, errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't seek to %d arg: %s", arg,
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }
@@ -188,8 +177,6 @@ void
 cmd_jump (xmmsc_connection_t *conn, gint argc, gchar **argv)
 {
 	xmmsc_result_t *res;
-	xmmsv_t *val;
-	const char *errmsg;
 
 	if (argc < 3) {
 		print_error ("You'll need to specify a position to jump to. Usage:\n"
@@ -205,18 +192,18 @@ cmd_jump (xmmsc_connection_t *conn, gint argc, gchar **argv)
 	}
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't jump to that song: %s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't jump to that song: %s",
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 
 	res = xmmsc_playback_tickle (conn);
 	xmmsc_result_wait (res);
 
-	val = xmmsc_result_get_value (res);
-	if (xmmsv_get_error (val, &errmsg)) {
-		print_error ("Couldn't go to next song: %s", errmsg);
+	if (xmmsc_result_iserror (res)) {
+		print_error ("Couldn't go to next song: %s",
+		             xmmsc_result_get_error (res));
 	}
 	xmmsc_result_unref (res);
 }

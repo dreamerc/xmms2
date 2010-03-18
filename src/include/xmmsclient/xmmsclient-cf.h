@@ -16,6 +16,4 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import "xmmsclient/xmmsclient.h"
 
-unsigned int xmmsc_mainloop_cf_init (xmmsc_connection_t *c, CFRunLoopSourceRef *source);
-
-void xmmsc_mainloop_cf_shutdown (xmmsc_connection_t *c, CFRunLoopSourceRef source);
+unsigned int xmmsc_ipc_setup_with_cf (xmmsc_connection_t *c);
