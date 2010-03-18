@@ -49,16 +49,44 @@ struct xmms_ipc_msg_St {
 	uint32_t xfered;
 };
 
+static void xmms_ipc_msg_store_uint32 (xmms_ipc_msg_t *msg, uint32_t offset, uint32_t v);
 
-void
-xmms_ipc_append_coll_attr (const char* key, const char* value, void *userdata) {
+static uint32_t internal_ipc_msg_put_bin (xmms_ipc_msg_t *msg, const unsigned char *data, unsigned int len);
+static uint32_t internal_ipc_msg_put_error (xmms_ipc_msg_t *msg, const char *errmsg);
+static uint32_t internal_ipc_msg_put_uint32 (xmms_ipc_msg_t *msg, uint32_t v);
+static uint32_t internal_ipc_msg_put_int32 (xmms_ipc_msg_t *msg, int32_t v);
+static uint32_t internal_ipc_msg_put_string (xmms_ipc_msg_t *msg, const char *str);
+static uint32_t internal_ipc_msg_put_collection (xmms_ipc_msg_t *msg, xmmsv_coll_t *coll);
+static uint32_t internal_ipc_msg_put_value_list (xmms_ipc_msg_t *msg, xmmsv_t *v);
+static uint32_t internal_ipc_msg_put_value_dict (xmms_ipc_msg_t *msg, xmmsv_t *v);
+
+static bool xmms_ipc_msg_get_error_alloc (xmms_ipc_msg_t *msg, char **buf, unsigned int *len);
+static bool xmms_ipc_msg_get_uint32 (xmms_ipc_msg_t *msg, uint32_t *v);
+static bool xmms_ipc_msg_get_int32 (xmms_ipc_msg_t *msg, int32_t *v);
+static bool xmms_ipc_msg_get_string_alloc (xmms_ipc_msg_t *msg, char **buf, unsigned int *len);
+static bool xmms_ipc_msg_get_collection_alloc (xmms_ipc_msg_t *msg, xmmsv_coll_t **coll);
+static bool xmms_ipc_msg_get_bin_alloc (xmms_ipc_msg_t *msg, unsigned char **buf, unsigned int *len);
+
+static bool xmms_ipc_msg_get_value_alloc (xmms_ipc_msg_t *msg, xmmsv_t **val);
+static bool xmms_ipc_msg_get_value_of_type_alloc (xmms_ipc_msg_t *msg, xmmsv_type_t type, xmmsv_t **val);
+
+static void
+xmms_ipc_append_coll_attr (const char *key, xmmsv_t *value, void *userdata)
+{
 	xmms_ipc_msg_t *msg = (xmms_ipc_msg_t *)userdata;
-	xmms_ipc_msg_put_string (msg, key);
-	xmms_ipc_msg_put_string (msg, value);
+	const char *s;
+	int r;
+
+	r = xmmsv_get_string (value, &s);
+	x_return_if_fail (r);
+
+	internal_ipc_msg_put_string (msg, key);
+	internal_ipc_msg_put_string (msg, s);
 }
 
-void
-xmms_ipc_count_coll_attr (const char* key, const char* value, void *userdata) {
+static void
+xmms_ipc_count_coll_attr (const char *key, xmmsv_t *value, void *userdata)
+{
 	int *n = (int *)userdata;
 	++(*n);
 }
@@ -309,40 +337,41 @@ xmms_ipc_msg_put_data (xmms_ipc_msg_t *msg, const void *data, unsigned int len)
 	return total;
 }
 
-uint32_t
-xmms_ipc_msg_put_bin (xmms_ipc_msg_t *msg,
-                      const unsigned char *data,
-                      unsigned int len)
+static uint32_t
+internal_ipc_msg_put_bin (xmms_ipc_msg_t *msg,
+                          const unsigned char *data,
+                          unsigned int len)
 {
-	xmms_ipc_msg_put_uint32 (msg, len);
+	internal_ipc_msg_put_uint32 (msg, len);
+
 	return xmms_ipc_msg_put_data (msg, data, len);
 }
 
-uint32_t
-xmms_ipc_msg_put_error (xmms_ipc_msg_t *msg, const char *errmsg)
+static uint32_t
+internal_ipc_msg_put_error (xmms_ipc_msg_t *msg, const char *errmsg)
 {
 	if (!msg) {
 		return -1;
 	}
 
 	if (!errmsg) {
-		return xmms_ipc_msg_put_uint32 (msg, 0);
+		return internal_ipc_msg_put_uint32 (msg, 0);
 	}
 
-	xmms_ipc_msg_put_uint32 (msg, strlen (errmsg) + 1);
+	internal_ipc_msg_put_uint32 (msg, strlen (errmsg) + 1);
 
 	return xmms_ipc_msg_put_data (msg, errmsg, strlen (errmsg) + 1);
 }
 
-uint32_t
-xmms_ipc_msg_put_uint32 (xmms_ipc_msg_t *msg, uint32_t v)
+static uint32_t
+internal_ipc_msg_put_uint32 (xmms_ipc_msg_t *msg, uint32_t v)
 {
 	v = htonl (v);
 
 	return xmms_ipc_msg_put_data (msg, &v, sizeof (v));
 }
 
-void
+static void
 xmms_ipc_msg_store_uint32 (xmms_ipc_msg_t *msg,
                            uint32_t offset, uint32_t v)
 {
@@ -351,42 +380,35 @@ xmms_ipc_msg_store_uint32 (xmms_ipc_msg_t *msg,
 	memcpy (&msg->data->header.data[offset], &v, sizeof (v));
 }
 
-uint32_t
-xmms_ipc_msg_put_int32 (xmms_ipc_msg_t *msg, int32_t v)
+static uint32_t
+internal_ipc_msg_put_int32 (xmms_ipc_msg_t *msg, int32_t v)
 {
 	v = htonl (v);
 
 	return xmms_ipc_msg_put_data (msg, &v, sizeof (v));
 }
 
-uint32_t
-xmms_ipc_msg_put_float (xmms_ipc_msg_t *msg, float v)
-{
-	/** @todo do we need to convert ? */
-	return xmms_ipc_msg_put_data (msg, &v, sizeof (v));
-}
-
-uint32_t
-xmms_ipc_msg_put_string (xmms_ipc_msg_t *msg, const char *str)
+static uint32_t
+internal_ipc_msg_put_string (xmms_ipc_msg_t *msg, const char *str)
 {
 	if (!msg) {
 		return -1;
 	}
 
 	if (!str) {
-		return xmms_ipc_msg_put_uint32 (msg, 0);
+		return internal_ipc_msg_put_uint32 (msg, 0);
 	}
 
-	xmms_ipc_msg_put_uint32 (msg, strlen (str) + 1);
+	internal_ipc_msg_put_uint32 (msg, strlen (str) + 1);
 
 	return xmms_ipc_msg_put_data (msg, str, strlen (str) + 1);
 }
 
-uint32_t
-xmms_ipc_msg_put_collection (xmms_ipc_msg_t *msg, xmmsv_coll_t *coll)
+static uint32_t
+internal_ipc_msg_put_collection (xmms_ipc_msg_t *msg, xmmsv_coll_t *coll)
 {
 	xmmsv_list_iter_t *it;
-	xmmsv_t *v;
+	xmmsv_t *v, *attrs;
 	int n;
 	uint32_t ret, *idlist;
 	xmmsv_coll_t *op;
@@ -396,22 +418,26 @@ xmms_ipc_msg_put_collection (xmms_ipc_msg_t *msg, xmmsv_coll_t *coll)
 	}
 
 	/* push type */
-	xmms_ipc_msg_put_uint32 (msg, xmmsv_coll_get_type (coll));
+	internal_ipc_msg_put_uint32 (msg, xmmsv_coll_get_type (coll));
 
 	/* attribute counter and values */
+	attrs = xmmsv_coll_attributes_get (coll);
 	n = 0;
-	xmmsv_coll_attribute_foreach (coll, xmms_ipc_count_coll_attr, &n);
-	xmms_ipc_msg_put_uint32 (msg, n);
 
-	xmmsv_coll_attribute_foreach (coll, xmms_ipc_append_coll_attr, msg);
+	xmmsv_dict_foreach (attrs, xmms_ipc_count_coll_attr, &n);
+	internal_ipc_msg_put_uint32 (msg, n);
+
+	xmmsv_dict_foreach (attrs, xmms_ipc_append_coll_attr, msg);
+
+	attrs = NULL; /* no unref needed. */
 
 	/* idlist counter and content */
 	idlist = xmmsv_coll_get_idlist (coll);
 	for (n = 0; idlist[n] != 0; n++) { }
 
-	xmms_ipc_msg_put_uint32 (msg, n);
+	internal_ipc_msg_put_uint32 (msg, n);
 	for (n = 0; idlist[n] != 0; n++) {
-		xmms_ipc_msg_put_uint32 (msg, idlist[n]);
+		internal_ipc_msg_put_uint32 (msg, idlist[n]);
 	}
 
 	/* operands counter and objects */
@@ -420,7 +446,7 @@ xmms_ipc_msg_put_collection (xmms_ipc_msg_t *msg, xmmsv_coll_t *coll)
 		n = xmmsv_list_get_size (xmmsv_coll_operands_get (coll));
 	}
 
-	ret = xmms_ipc_msg_put_uint32 (msg, n);
+	ret = internal_ipc_msg_put_uint32 (msg, n);
 
 	if (n > 0) {
 		xmmsv_get_list_iter (xmmsv_coll_operands_get (coll), &it);
@@ -429,7 +455,10 @@ xmms_ipc_msg_put_collection (xmms_ipc_msg_t *msg, xmmsv_coll_t *coll)
 			if (!xmmsv_get_coll (v, &op)) {
 				x_api_error ("Non collection operand", 0);
 			}
-			ret = xmms_ipc_msg_put_collection (msg, op);
+
+			internal_ipc_msg_put_int32 (msg, XMMSV_TYPE_COLL);
+
+			ret = internal_ipc_msg_put_collection (msg, op);
 			xmmsv_list_iter_next (it);
 		}
 	}
@@ -440,19 +469,7 @@ xmms_ipc_msg_put_collection (xmms_ipc_msg_t *msg, xmmsv_coll_t *coll)
 uint32_t
 xmms_ipc_msg_put_value (xmms_ipc_msg_t *msg, xmmsv_t *v)
 {
-	xmmsv_type_t type;
-
-	type = xmmsv_get_type (v);
-	xmms_ipc_msg_put_int32 (msg, type);
-
-	return xmms_ipc_msg_put_value_data (msg, v);
-}
-
-uint32_t
-xmms_ipc_msg_put_value_data (xmms_ipc_msg_t *msg, xmmsv_t *v)
-{
 	uint32_t ret;
-	uint32_t u;
 	int32_t i;
 	const char *s;
 	xmmsv_coll_t *c;
@@ -461,6 +478,7 @@ xmms_ipc_msg_put_value_data (xmms_ipc_msg_t *msg, xmmsv_t *v)
 	xmmsv_type_t type;
 
 	type = xmmsv_get_type (v);
+	internal_ipc_msg_put_int32 (msg, type);
 
 	/* FIXME: what to do if value fetching fails? */
 	/* FIXME: return -1 unsigned int?? */
@@ -470,37 +488,37 @@ xmms_ipc_msg_put_value_data (xmms_ipc_msg_t *msg, xmmsv_t *v)
 		if (!xmmsv_get_error (v, &s)) {
 			return -1;
 		}
-		ret = xmms_ipc_msg_put_error (msg, s);
+		ret = internal_ipc_msg_put_error (msg, s);
 		break;
 	case XMMSV_TYPE_INT32:
 		if (!xmmsv_get_int (v, &i)) {
 			return -1;
 		}
-		ret = xmms_ipc_msg_put_int32 (msg, i);
+		ret = internal_ipc_msg_put_int32 (msg, i);
 		break;
 	case XMMSV_TYPE_STRING:
 		if (!xmmsv_get_string (v, &s)) {
 			return -1;
 		}
-		ret = xmms_ipc_msg_put_string (msg, s);
+		ret = internal_ipc_msg_put_string (msg, s);
 		break;
 	case XMMSV_TYPE_COLL:
 		if (!xmmsv_get_coll (v, &c)) {
 			return -1;
 		}
-		ret = xmms_ipc_msg_put_collection (msg, c);
+		ret = internal_ipc_msg_put_collection (msg, c);
 		break;
 	case XMMSV_TYPE_BIN:
 		if (!xmmsv_get_bin (v, &bc, &bl)) {
 			return -1;
 		}
-		ret = xmms_ipc_msg_put_bin (msg, bc, bl);
+		ret = internal_ipc_msg_put_bin (msg, bc, bl);
 		break;
 	case XMMSV_TYPE_LIST:
-		ret = xmms_ipc_msg_put_value_list (msg, v);
+		ret = internal_ipc_msg_put_value_list (msg, v);
 		break;
 	case XMMSV_TYPE_DICT:
-		ret = xmms_ipc_msg_put_value_dict (msg, v);
+		ret = internal_ipc_msg_put_value_dict (msg, v);
 		break;
 
 	case XMMSV_TYPE_NONE:
@@ -518,8 +536,8 @@ xmms_ipc_msg_put_value_data (xmms_ipc_msg_t *msg, xmmsv_t *v)
 	return ret;
 }
 
-uint32_t
-xmms_ipc_msg_put_value_list (xmms_ipc_msg_t *msg, xmmsv_t *v)
+static uint32_t
+internal_ipc_msg_put_value_list (xmms_ipc_msg_t *msg, xmmsv_t *v)
 {
 	xmmsv_list_iter_t *it;
 	xmmsv_t *entry;
@@ -530,7 +548,7 @@ xmms_ipc_msg_put_value_list (xmms_ipc_msg_t *msg, xmmsv_t *v)
 	}
 
 	/* store a dummy value, store the real count once it's known */
-	offset = xmms_ipc_msg_put_uint32 (msg, 0);
+	offset = internal_ipc_msg_put_uint32 (msg, 0);
 
 	count = 0;
 	while (xmmsv_list_iter_valid (it)) {
@@ -546,8 +564,8 @@ xmms_ipc_msg_put_value_list (xmms_ipc_msg_t *msg, xmmsv_t *v)
 	return ret;
 }
 
-uint32_t
-xmms_ipc_msg_put_value_dict (xmms_ipc_msg_t *msg, xmmsv_t *v)
+static uint32_t
+internal_ipc_msg_put_value_dict (xmms_ipc_msg_t *msg, xmmsv_t *v)
 {
 	xmmsv_dict_iter_t *it;
 	const char *key;
@@ -559,12 +577,12 @@ xmms_ipc_msg_put_value_dict (xmms_ipc_msg_t *msg, xmmsv_t *v)
 	}
 
 	/* store a dummy value, store the real count once it's known */
-	offset = xmms_ipc_msg_put_uint32 (msg, 0);
+	offset = internal_ipc_msg_put_uint32 (msg, 0);
 
 	count = 0;
 	while (xmmsv_dict_iter_valid (it)) {
 		xmmsv_dict_iter_pair (it, &key, &entry);
-		ret = xmms_ipc_msg_put_string (msg, key);
+		ret = internal_ipc_msg_put_string (msg, key);
 		ret = xmms_ipc_msg_put_value (msg, entry);
 		xmmsv_dict_iter_next (it);
 		count++;
@@ -595,7 +613,7 @@ xmms_ipc_msg_get_data (xmms_ipc_msg_t *msg, void *buf, unsigned int len)
 	return true;
 }
 
-bool
+static bool
 xmms_ipc_msg_get_error_alloc (xmms_ipc_msg_t *msg, char **buf,
                               unsigned int *len)
 {
@@ -603,7 +621,7 @@ xmms_ipc_msg_get_error_alloc (xmms_ipc_msg_t *msg, char **buf,
 	return xmms_ipc_msg_get_string_alloc (msg, buf, len);
 }
 
-bool
+static bool
 xmms_ipc_msg_get_uint32 (xmms_ipc_msg_t *msg, uint32_t *v)
 {
 	bool ret;
@@ -617,7 +635,7 @@ xmms_ipc_msg_get_uint32 (xmms_ipc_msg_t *msg, uint32_t *v)
 	return ret;
 }
 
-bool
+static bool
 xmms_ipc_msg_get_int32 (xmms_ipc_msg_t *msg, int32_t *v)
 {
 	bool ret;
@@ -631,14 +649,7 @@ xmms_ipc_msg_get_int32 (xmms_ipc_msg_t *msg, int32_t *v)
 	return ret;
 }
 
-bool
-xmms_ipc_msg_get_float (xmms_ipc_msg_t *msg, float *v)
-{
-	/** @todo do we need to convert? */
-	return xmms_ipc_msg_get_data (msg, v, sizeof (*v));
-}
-
-bool
+static bool
 xmms_ipc_msg_get_string_alloc (xmms_ipc_msg_t *msg, char **buf,
                                unsigned int *len)
 {
@@ -670,7 +681,7 @@ xmms_ipc_msg_get_string_alloc (xmms_ipc_msg_t *msg, char **buf,
 	return true;
 }
 
-bool
+static bool
 xmms_ipc_msg_get_bin_alloc (xmms_ipc_msg_t *msg,
                             unsigned char **buf,
                             unsigned int *len)
@@ -701,37 +712,7 @@ xmms_ipc_msg_get_bin_alloc (xmms_ipc_msg_t *msg,
 	return true;
 }
 
-bool
-xmms_ipc_msg_get_string (xmms_ipc_msg_t *msg, char *buf, unsigned int maxlen)
-{
-	uint32_t len;
-
-	if (buf) {
-		buf[maxlen - 1] = '\0';
-		maxlen--;
-	}
-
-	if (!xmms_ipc_msg_get_uint32 (msg, &len)) {
-		return false;
-	}
-
-	if (!len) {
-		buf[0] = '\0';
-		return true;
-	}
-
-	if (!xmms_ipc_msg_get_data (msg, buf, MIN (maxlen, len))) {
-		return false;
-	}
-
-	if (maxlen < len) {
-		xmms_ipc_msg_get_data (msg, NULL, len - maxlen);
-	}
-
-	return true;
-}
-
-bool
+static bool
 xmms_ipc_msg_get_collection_alloc (xmms_ipc_msg_t *msg, xmmsv_coll_t **coll)
 {
 	unsigned int i;
@@ -797,8 +778,11 @@ xmms_ipc_msg_get_collection_alloc (xmms_ipc_msg_t *msg, xmmsv_coll_t **coll)
 
 	for (i = 0; i < n_items; i++) {
 		xmmsv_coll_t *operand;
+		xmmsv_type_t type;
 
-		if (!xmms_ipc_msg_get_collection_alloc (msg, &operand)) {
+		if (!xmms_ipc_msg_get_uint32 (msg, &type) ||
+		    type != XMMSV_TYPE_COLL ||
+		    !xmms_ipc_msg_get_collection_alloc (msg, &operand)) {
 			goto err;
 		}
 
@@ -840,6 +824,7 @@ xmmsc_deserialize_dict (xmms_ipc_msg_t *msg, xmmsv_t **val)
 		}
 
 		if (!xmms_ipc_msg_get_value_alloc (msg, &v)) {
+			free (key);
 			goto err;
 		}
 
@@ -890,25 +875,24 @@ err:
 	return false;
 }
 
-
-bool
+static bool
 xmms_ipc_msg_get_value_alloc (xmms_ipc_msg_t *msg, xmmsv_t **val)
 {
 	int32_t type;
 
-	if (!xmms_ipc_msg_get_int32 (msg, (int32_t *) &type)) {
+	if (!xmms_ipc_msg_get_int32 (msg, &type)) {
 		return false;
 	}
 
 	return xmms_ipc_msg_get_value_of_type_alloc (msg, type, val);
 }
 
-bool
+static bool
 xmms_ipc_msg_get_value_of_type_alloc (xmms_ipc_msg_t *msg, xmmsv_type_t type,
                                       xmmsv_t **val)
 {
 	int32_t i;
-	uint32_t len, u;
+	uint32_t len;
 	char *s;
 	xmmsv_coll_t *c;
 	unsigned char *d;
@@ -947,8 +931,7 @@ xmms_ipc_msg_get_value_of_type_alloc (xmms_ipc_msg_t *msg, xmmsv_type_t type,
 			break;
 
 		case XMMSV_TYPE_COLL:
-			xmms_ipc_msg_get_collection_alloc (msg, &c);
-			if (!c) {
+			if (!xmms_ipc_msg_get_collection_alloc (msg, &c)) {
 				return false;
 			}
 			*val = xmmsv_new_coll (c);
@@ -972,4 +955,10 @@ xmms_ipc_msg_get_value_of_type_alloc (xmms_ipc_msg_t *msg, xmmsv_type_t type,
 	}
 
 	return true;
+}
+
+bool
+xmms_ipc_msg_get_value (xmms_ipc_msg_t *msg, xmmsv_t **val)
+{
+	return xmms_ipc_msg_get_value_alloc (msg, val);
 }

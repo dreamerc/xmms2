@@ -43,7 +43,7 @@ xmmsc_playback_tickle (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_OUTPUT, XMMS_IPC_CMD_DECODER_KILL);
+	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_PLAYBACK, XMMS_IPC_CMD_DECODER_KILL);
 }
 
 /**
@@ -56,7 +56,7 @@ xmmsc_playback_stop (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_OUTPUT, XMMS_IPC_CMD_STOP);
+	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_PLAYBACK, XMMS_IPC_CMD_STOP);
 }
 
 /**
@@ -69,7 +69,7 @@ xmmsc_playback_pause (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_OUTPUT, XMMS_IPC_CMD_PAUSE);
+	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_PLAYBACK, XMMS_IPC_CMD_PAUSE);
 }
 
 /**
@@ -81,7 +81,7 @@ xmmsc_playback_start (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_OUTPUT,
+	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_PLAYBACK,
 	                              XMMS_IPC_CMD_START);
 }
 
@@ -93,19 +93,18 @@ xmmsc_playback_start (xmmsc_connection_t *c)
  * @param c The connection structure.
  * @param milliseconds The total number of ms where
  * playback should continue.
+ * @deprecated
  */
 
 xmmsc_result_t *
-xmmsc_playback_seek_ms (xmmsc_connection_t *c, int milliseconds)
+xmmsc_playback_seek_ms_abs (xmmsc_connection_t *c, int milliseconds)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_OUTPUT, XMMS_IPC_CMD_SEEKMS);
-	xmms_ipc_msg_put_int32 (msg, milliseconds);
-
-	return xmmsc_send_msg (c, msg);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_PLAYBACK, XMMS_IPC_CMD_SEEKMS,
+	                       XMMSV_LIST_ENTRY_INT (milliseconds),
+	                       XMMSV_LIST_ENTRY_INT (XMMS_PLAYBACK_SEEK_SET),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -115,19 +114,41 @@ xmmsc_playback_seek_ms (xmmsc_connection_t *c, int milliseconds)
  * @param c The connection structure.
  * @param milliseconds The offset in ms from the current position to
  * where playback should continue.
+ * @deprecated
  */
 
 xmmsc_result_t *
 xmmsc_playback_seek_ms_rel (xmmsc_connection_t *c, int milliseconds)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_OUTPUT, XMMS_IPC_CMD_SEEKMS_REL);
-	xmms_ipc_msg_put_int32 (msg, milliseconds);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_PLAYBACK, XMMS_IPC_CMD_SEEKMS,
+	                       XMMSV_LIST_ENTRY_INT (milliseconds),
+	                       XMMSV_LIST_ENTRY_INT (XMMS_PLAYBACK_SEEK_CUR),
+	                       XMMSV_LIST_END);
+}
 
-	return xmmsc_send_msg (c, msg);
+/**
+ * Seek to a position given in milliseconds in the current playback.
+ *
+ * @param c The connection structure.
+ * @param milliseconds
+ * @param whence Specifies how the absolute position in milliseconds is
+ * determined. If whence is XMMS_PLAYBACK_SEEK_SET, @milliseconds is treated
+ * as an absolute value. If whence is XMMS_PLAYBACK_SEEK_CUR, the new
+ * position is computed by adding @milliseconds to the current position.
+ */
+
+xmmsc_result_t *
+xmmsc_playback_seek_ms (xmmsc_connection_t *c, int milliseconds,
+                        xmms_playback_seek_mode_t whence)
+{
+	x_check_conn (c, NULL);
+
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_PLAYBACK, XMMS_IPC_CMD_SEEKMS,
+	                       XMMSV_LIST_ENTRY_INT (milliseconds),
+	                       XMMSV_LIST_ENTRY_INT (whence),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -136,19 +157,19 @@ xmmsc_playback_seek_ms_rel (xmmsc_connection_t *c, int milliseconds)
  * @param c The connection structure.
  * @param samples the total number of samples where playback
  * should continue.
+ * @deprecated
  */
 
 xmmsc_result_t *
-xmmsc_playback_seek_samples (xmmsc_connection_t *c, int samples)
+xmmsc_playback_seek_samples_abs (xmmsc_connection_t *c, int samples)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_OUTPUT, XMMS_IPC_CMD_SEEKSAMPLES);
-	xmms_ipc_msg_put_int32 (msg, samples);
-
-	return xmmsc_send_msg (c, msg);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_PLAYBACK,
+	                       XMMS_IPC_CMD_SEEKSAMPLES,
+	                       XMMSV_LIST_ENTRY_INT (samples),
+	                       XMMSV_LIST_ENTRY_INT (XMMS_PLAYBACK_SEEK_SET),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -158,19 +179,44 @@ xmmsc_playback_seek_samples (xmmsc_connection_t *c, int samples)
  * @param c The connection structure.
  * @param samples The offset in number of samples from the current
  * position to where playback should continue.
+ * @deprecated
  */
 
 xmmsc_result_t *
 xmmsc_playback_seek_samples_rel (xmmsc_connection_t *c, int samples)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_OUTPUT, XMMS_IPC_CMD_SEEKSAMPLES_REL);
-	xmms_ipc_msg_put_int32 (msg, samples);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_PLAYBACK,
+	                       XMMS_IPC_CMD_SEEKSAMPLES,
+	                       XMMSV_LIST_ENTRY_INT (samples),
+	                       XMMSV_LIST_ENTRY_INT (XMMS_PLAYBACK_SEEK_CUR),
+	                       XMMSV_LIST_END);
+}
 
-	return xmmsc_send_msg (c, msg);
+/**
+ * Seek to a position given in samples in the current playback.
+ *
+ * @param c The connection structure.
+ * @param samples
+ * @param whence Specifies how the absolute position in samples is
+ * determined. If whence is XMMS_PLAYBACK_SEEK_SET, @samples is treated
+ * as an absolute value. If whence is XMMS_PLAYBACK_SEEK_CUR, the new
+ * position is computed by adding @samples to the current position.
+ *
+ */
+
+xmmsc_result_t *
+xmmsc_playback_seek_samples (xmmsc_connection_t *c, int samples,
+                             xmms_playback_seek_mode_t whence)
+{
+	x_check_conn (c, NULL);
+
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_PLAYBACK,
+	                       XMMS_IPC_CMD_SEEKSAMPLES,
+	                       XMMSV_LIST_ENTRY_INT (samples),
+	                       XMMSV_LIST_ENTRY_INT (whence),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -193,8 +239,8 @@ xmmsc_playback_status (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_OUTPUT,
-	                              XMMS_IPC_CMD_OUTPUT_STATUS);
+	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_PLAYBACK,
+	                              XMMS_IPC_CMD_PLAYBACK_STATUS);
 }
 
 /**
@@ -206,7 +252,7 @@ xmmsc_broadcast_playback_current_id (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_broadcast_msg (c, XMMS_IPC_SIGNAL_OUTPUT_CURRENTID);
+	return xmmsc_send_broadcast_msg (c, XMMS_IPC_SIGNAL_PLAYBACK_CURRENTID);
 }
 
 /**
@@ -217,7 +263,7 @@ xmmsc_playback_current_id (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_OUTPUT,
+	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_PLAYBACK,
 	                              XMMS_IPC_CMD_CURRENTID);
 }
 
@@ -230,7 +276,7 @@ xmmsc_signal_playback_playtime (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_signal_msg (c, XMMS_IPC_SIGNAL_OUTPUT_PLAYTIME);
+	return xmmsc_send_signal_msg (c, XMMS_IPC_SIGNAL_PLAYBACK_PLAYTIME);
 }
 
 /**
@@ -241,7 +287,7 @@ xmmsc_playback_playtime (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_OUTPUT,
+	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_PLAYBACK,
 	                              XMMS_IPC_CMD_CPLAYTIME);
 }
 
@@ -249,17 +295,14 @@ xmmsc_result_t *
 xmmsc_playback_volume_set (xmmsc_connection_t *c,
                            const char *channel, int volume)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 	x_api_error_if (!channel, "with a NULL channel", NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_OUTPUT,
-	                        XMMS_IPC_CMD_VOLUME_SET);
-	xmms_ipc_msg_put_string (msg, channel);
-	xmms_ipc_msg_put_int32 (msg, volume);
-
-	return xmmsc_send_msg (c, msg);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_PLAYBACK,
+	                       XMMS_IPC_CMD_VOLUME_SET,
+	                       XMMSV_LIST_ENTRY_STR (channel),
+	                       XMMSV_LIST_ENTRY_INT (volume),
+	                       XMMSV_LIST_END);
 }
 
 xmmsc_result_t *
@@ -267,7 +310,7 @@ xmmsc_playback_volume_get (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_OUTPUT,
+	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_PLAYBACK,
 	                              XMMS_IPC_CMD_VOLUME_GET);
 }
 
@@ -276,7 +319,7 @@ xmmsc_broadcast_playback_volume_changed (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
-	return xmmsc_send_broadcast_msg (c, XMMS_IPC_SIGNAL_OUTPUT_VOLUME_CHANGED);
+	return xmmsc_send_broadcast_msg (c, XMMS_IPC_SIGNAL_PLAYBACK_VOLUME_CHANGED);
 }
 
 /** @} */

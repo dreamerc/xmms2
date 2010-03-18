@@ -36,12 +36,8 @@
 static xmmsc_result_t *
 do_methodcall (xmmsc_connection_t *conn, unsigned int id, const char *arg)
 {
-	xmms_ipc_msg_t *msg;
-
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MEDIALIB, id);
-	xmms_ipc_msg_put_string (msg, arg);
-
-	return xmmsc_send_msg (conn, msg);
+	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_MEDIALIB, id,
+	                       XMMSV_LIST_ENTRY_STR (arg), XMMSV_LIST_END);
 }
 
 /**
@@ -110,15 +106,13 @@ xmmsc_medialib_get_id_encoded (xmmsc_connection_t *conn, const char *url)
 xmmsc_result_t *
 xmmsc_medialib_move_entry (xmmsc_connection_t *conn, int entry, const char *url)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (conn, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MEDIALIB, XMMS_IPC_CMD_MOVE_URL);
-	xmms_ipc_msg_put_int32 (msg, entry);
-	xmms_ipc_msg_put_string (msg, url);
-
-	return xmmsc_send_msg (conn, msg);
+	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_MEDIALIB,
+	                       XMMS_IPC_CMD_MOVE_URL,
+	                       XMMSV_LIST_ENTRY_INT (entry),
+	                       XMMSV_LIST_ENTRY_STR (url),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -129,19 +123,17 @@ xmmsc_medialib_move_entry (xmmsc_connection_t *conn, int entry, const char *url)
 xmmsc_result_t *
 xmmsc_medialib_remove_entry (xmmsc_connection_t *conn, int entry)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (conn, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MEDIALIB, XMMS_IPC_CMD_REMOVE_ID);
-	xmms_ipc_msg_put_int32 (msg, entry);
-
-	return xmmsc_send_msg (conn, msg);
+	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_MEDIALIB,
+	                       XMMS_IPC_CMD_REMOVE_ID,
+	                       XMMSV_LIST_ENTRY_INT (entry),
+	                       XMMSV_LIST_END);
 }
 
 /**
  * Add a URL to the medialib. If you want to add mutiple files
- * you should call #xmmsc_medialib_path_import
+ * you should call #xmmsc_medialib_import_path
  * @param conn The #xmmsc_connection_t
  * @param url URL to add to the medialib.
  */
@@ -209,7 +201,7 @@ xmmsc_medialib_add_entry_full (xmmsc_connection_t *conn, const char *url, xmmsv_
 
 /**
  * Add a URL to the medialib. If you want to add mutiple files
- * you should call #xmmsc_medialib_path_import
+ * you should call #xmmsc_medialib_import_path
  *
  * same as #xmmsc_medialib_add_entry but expects a encoded URL
  * instead
@@ -225,7 +217,56 @@ xmmsc_medialib_add_entry_encoded (xmmsc_connection_t *conn, const char *url)
 	if (!_xmmsc_medialib_verify_url (url))
 		x_api_error ("with a non encoded url", NULL);
 
-	return do_methodcall (conn, XMMS_IPC_CMD_ADD_URL, url);
+	return do_methodcall (conn, XMMS_IPC_CMD_MLIB_ADD_URL, url);
+}
+
+/**
+ * Import a all files recursivly from the directory passed
+ * as argument.
+ * @param conn #xmmsc_connection_t
+ * @param path A directory to recursive search for mediafiles, this must
+ * 		  include the protocol, i.e file://
+ */
+xmmsc_result_t *
+xmmsc_medialib_import_path (xmmsc_connection_t *conn, const char *path)
+{
+	xmmsc_result_t *res;
+	char *enc_path;
+
+	x_check_conn (conn, NULL);
+
+	enc_path = _xmmsc_medialib_encode_url (path, NULL);
+	if (!enc_path)
+		return NULL;
+
+	res = xmmsc_medialib_import_path_encoded (conn, enc_path);
+
+	free (enc_path);
+
+	return res;
+}
+
+/**
+ * Import a all files recursivly from the directory passed as argument
+ * which must already be url encoded. You probably want to use
+ * #xmmsc_medialib_import_path unless you want to add a string that
+ * comes as a result from the daemon, such as from
+ * #xmmsc_xform_media_browse
+ *
+ * @param conn #xmmsc_connection_t
+ * @param path A directory to recursive search for mediafiles, this must
+ * 		  include the protocol, i.e file://
+ */
+xmmsc_result_t *
+xmmsc_medialib_import_path_encoded (xmmsc_connection_t *conn,
+                                    const char *path)
+{
+	x_check_conn (conn, NULL);
+
+	if (!_xmmsc_medialib_verify_url (path))
+		x_api_error ("with a non encoded url", NULL);
+
+	return do_methodcall (conn, XMMS_IPC_CMD_PATH_IMPORT, path);
 }
 
 /**
@@ -238,20 +279,7 @@ xmmsc_medialib_add_entry_encoded (xmmsc_connection_t *conn, const char *url)
 xmmsc_result_t *
 xmmsc_medialib_path_import (xmmsc_connection_t *conn, const char *path)
 {
-	xmmsc_result_t *res;
-	char *enc_path;
-
-	x_check_conn (conn, NULL);
-
-	enc_path = _xmmsc_medialib_encode_url (path, NULL);
-	if (!enc_path)
-		return NULL;
-
-	res = xmmsc_medialib_path_import_encoded (conn, enc_path);
-
-	free (enc_path);
-
-	return res;
+	return xmmsc_medialib_import_path (conn, path);
 }
 
 /**
@@ -269,12 +297,7 @@ xmmsc_result_t *
 xmmsc_medialib_path_import_encoded (xmmsc_connection_t *conn,
                                     const char *path)
 {
-	x_check_conn (conn, NULL);
-
-	if (!_xmmsc_medialib_verify_url (path))
-		x_api_error ("with a non encoded url", NULL);
-
-	return do_methodcall (conn, XMMS_IPC_CMD_PATH_IMPORT, path);
+	return xmmsc_medialib_import_path_encoded (conn, path);
 }
 
 /**
@@ -288,15 +311,12 @@ xmmsc_medialib_path_import_encoded (xmmsc_connection_t *conn,
 xmmsc_result_t *
 xmmsc_medialib_rehash (xmmsc_connection_t *conn, int id)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (conn, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MEDIALIB, XMMS_IPC_CMD_REHASH);
-	xmms_ipc_msg_put_int32 (msg, id);
-
-	return xmmsc_send_msg (conn, msg);
-
+	return xmmsc_send_cmd (conn, XMMS_IPC_OBJECT_MEDIALIB,
+	                       XMMS_IPC_CMD_REHASH,
+	                       XMMSV_LIST_ENTRY_INT (id),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -305,14 +325,10 @@ xmmsc_medialib_rehash (xmmsc_connection_t *conn, int id)
 xmmsc_result_t *
 xmmsc_medialib_get_info (xmmsc_connection_t *c, int id)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MEDIALIB, XMMS_IPC_CMD_INFO);
-	xmms_ipc_msg_put_int32 (msg, id);
-
-	return xmmsc_send_msg (c, msg);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_MEDIALIB, XMMS_IPC_CMD_INFO,
+	                       XMMSV_LIST_ENTRY_INT (id), XMMSV_LIST_END);
 }
 
 /**
@@ -370,18 +386,15 @@ xmmsc_medialib_entry_property_set_int_with_source (xmmsc_connection_t *c,
                                                    const char *key,
                                                    int32_t value)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MEDIALIB,
-	                        XMMS_IPC_CMD_PROPERTY_SET_INT);
-	xmms_ipc_msg_put_int32 (msg, id);
-	xmms_ipc_msg_put_string (msg, source);
-	xmms_ipc_msg_put_string (msg, key);
-	xmms_ipc_msg_put_int32 (msg, value);
-
-	return xmmsc_send_msg (c, msg);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_MEDIALIB,
+	                       XMMS_IPC_CMD_PROPERTY_SET_INT,
+	                       XMMSV_LIST_ENTRY_INT (id),
+	                       XMMSV_LIST_ENTRY_STR (source),
+	                       XMMSV_LIST_ENTRY_STR (key),
+	                       XMMSV_LIST_ENTRY_INT (value),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -414,18 +427,15 @@ xmmsc_medialib_entry_property_set_str_with_source (xmmsc_connection_t *c,
                                                    const char *key,
                                                    const char *value)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MEDIALIB,
-	                        XMMS_IPC_CMD_PROPERTY_SET_STR);
-	xmms_ipc_msg_put_int32 (msg, id);
-	xmms_ipc_msg_put_string (msg, source);
-	xmms_ipc_msg_put_string (msg, key);
-	xmms_ipc_msg_put_string (msg, value);
-
-	return xmmsc_send_msg (c, msg);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_MEDIALIB,
+	                       XMMS_IPC_CMD_PROPERTY_SET_STR,
+	                       XMMSV_LIST_ENTRY_INT (id),
+	                       XMMSV_LIST_ENTRY_STR (source),
+	                       XMMSV_LIST_ENTRY_STR (key),
+	                       XMMSV_LIST_ENTRY_STR (value),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -456,17 +466,14 @@ xmmsc_medialib_entry_property_remove_with_source (xmmsc_connection_t *c,
                                                   const char *source,
                                                   const char *key)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_MEDIALIB,
-	                        XMMS_IPC_CMD_PROPERTY_REMOVE);
-	xmms_ipc_msg_put_int32 (msg, id);
-	xmms_ipc_msg_put_string (msg, source);
-	xmms_ipc_msg_put_string (msg, key);
-
-	return xmmsc_send_msg (c, msg);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_MEDIALIB,
+	                       XMMS_IPC_CMD_PROPERTY_REMOVE,
+	                       XMMSV_LIST_ENTRY_INT (id),
+	                       XMMSV_LIST_ENTRY_STR (source),
+	                       XMMSV_LIST_ENTRY_STR (key),
+	                       XMMSV_LIST_END);
 }
 
 /** @} */

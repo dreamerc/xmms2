@@ -1211,9 +1211,19 @@ This expands to all parameters passed to the alias.
 .PP
 .SH CONFIGURATION
 .PP
+All control characters are interpreted as expected, including ANSI escape sequences.
+.PP
 PROMPT
 .RS 4
 String to use as a prompt in
+.B INTERACTIVE MODE
+.RE
+.PP
+SHELL_START_MESSAGE
+.RS 4
+Boolean, if true,
+.B nycli
+will display a greeting message and basic help when started in
 .B INTERACTIVE MODE
 .RE
 .PP
@@ -1224,7 +1234,8 @@ Boolean, if true nycli will attempt to start \fBxmms2d\fR(1) if it's not running
 .PP
 AUTO_UNIQUE_COMPLETE
 .RS 4
-Boolean
+Boolean, complete an abbreviation of a command and it's arguments. For example: `serv vol 42' will
+complete to `server volume 42'. (Note: Abbreviations must be non-ambiguous)
 .RE
 .PP
 PLAYLIST_MARKER
@@ -1258,11 +1269,21 @@ String to format
 output with.
 .RE
 .PP
+HISTORY_FILE
+.RS 4
+File to save command history to.
+.RE
+.PP
 .SH FILES
 $XDG_CONFIG_HOME/xmms2/clients/nycli.conf
 .RS 4
 The configuration file for
 .B nycli
+.RE
+.PP
+$XDG_CACHE_HOME/xmms2/nyxmms2_history
+.RS 4
+Default command history file if HISTORY_FILE is unset.
 .RE
 .SH BUGS
 Please report all bugs at http://bugs.xmms2.xmms.se

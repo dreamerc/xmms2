@@ -58,16 +58,17 @@ typedef struct dump_tree_data_St {
 	gchar *prev_key;
 } dump_tree_data_t;
 
-static GTree *xmms_config_listvalues (xmms_config_t *conf, xmms_error_t *err);
+static GTree *xmms_config_client_list_values (xmms_config_t *conf, xmms_error_t *err);
 static xmms_config_property_t *xmms_config_property_new (const gchar *name);
-static gchar *xmms_config_property_client_lookup (xmms_config_t *conf, const gchar *key, xmms_error_t *err);
-static gchar *xmms_config_property_client_register (xmms_config_t *config, const gchar *name, const gchar *def_value, xmms_error_t *error);
+static gchar *xmms_config_client_get_value (xmms_config_t *conf, const gchar *key, xmms_error_t *err);
+static gchar *xmms_config_client_register_value (xmms_config_t *config, const gchar *name, const gchar *def_value, xmms_error_t *error);
 static gint compare_key (gconstpointer a, gconstpointer b, gpointer user_data);
+static void xmms_config_client_set_value (xmms_config_t *conf, const gchar *key, const gchar *value, xmms_error_t *err);
 
-XMMS_CMD_DEFINE (setvalue, xmms_config_setvalue, xmms_config_t *, NONE, STRING, STRING);
-XMMS_CMD_DEFINE (listvalues, xmms_config_listvalues, xmms_config_t *, DICT, NONE, NONE);
-XMMS_CMD_DEFINE (getvalue, xmms_config_property_client_lookup, xmms_config_t *, STRING, STRING, NONE);
-XMMS_CMD_DEFINE (regvalue, xmms_config_property_client_register, xmms_config_t *, STRING, STRING, STRING);
+XMMS_CMD_DEFINE (setvalue, xmms_config_client_set_value, xmms_config_t *, NONE, STRING, STRING);
+XMMS_CMD_DEFINE (listvalues, xmms_config_client_list_values, xmms_config_t *, DICT, NONE, NONE);
+XMMS_CMD_DEFINE (getvalue, xmms_config_client_get_value, xmms_config_t *, STRING, STRING, NONE);
+XMMS_CMD_DEFINE (regvalue, xmms_config_client_register_value, xmms_config_t *, STRING, STRING, STRING);
 
 /**
  * @defgroup Config Config
@@ -572,9 +573,10 @@ xmms_config_parse_text (GMarkupParseContext *ctx,
  * @param value The value to set the key to
  * @param err To be filled in if an error occurs
  */
-void
-xmms_config_setvalue (xmms_config_t *conf, const gchar *key, const gchar *value,
-                      xmms_error_t *err)
+static void
+xmms_config_client_set_value (xmms_config_t *conf,
+                              const gchar *key, const gchar *value,
+                              xmms_error_t *err)
 {
 	xmms_config_property_t *prop;
 
@@ -610,7 +612,7 @@ xmms_config_foreach_dict (gpointer key, xmms_config_property_t *prop,
  * @return a dict with config properties and values
  */
 static GTree *
-xmms_config_listvalues (xmms_config_t *conf, xmms_error_t *err)
+xmms_config_client_list_values (xmms_config_t *conf, xmms_error_t *err)
 {
 	GTree *ret;
 
@@ -634,8 +636,8 @@ xmms_config_listvalues (xmms_config_t *conf, xmms_error_t *err)
  * @return The value of the key, or NULL if not found
  */
 static gchar *
-xmms_config_property_client_lookup (xmms_config_t *conf, const gchar *key,
-                                    xmms_error_t *err)
+xmms_config_client_get_value (xmms_config_t *conf, const gchar *key,
+                              xmms_error_t *err)
 {
 	return g_strdup (xmms_config_property_lookup_get_string (conf, key, err));
 }
@@ -664,7 +666,7 @@ compare_key (gconstpointer a, gconstpointer b, gpointer user_data)
 }
 
 static GTree *
-create_tree ()
+create_tree (void)
 {
 	return g_tree_new_full (compare_key, NULL, g_free,
 	                        (GDestroyNotify) __int_xmms_object_unref);
@@ -987,10 +989,10 @@ xmms_config_property_new (const gchar *name)
  * @return The full path to the config value registered
  */
 static gchar *
-xmms_config_property_client_register (xmms_config_t *config,
-                                      const gchar *name,
-                                      const gchar *def_value,
-                                      xmms_error_t *error)
+xmms_config_client_register_value (xmms_config_t *config,
+                                   const gchar *name,
+                                   const gchar *def_value,
+                                   xmms_error_t *error)
 {
 	gchar *tmp;
 	tmp = g_strdup_printf ("clients.%s", name);

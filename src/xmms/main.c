@@ -56,17 +56,19 @@
 /*
  * Forward declarations of the methods in the main object
  */
-static void quit (xmms_object_t *object, xmms_error_t *error);
-static GTree *stats (xmms_object_t *object, xmms_error_t *error);
-static void hello (xmms_object_t *object, gint protocolver, const gchar *client, xmms_error_t *error);
+static void xmms_main_client_quit (xmms_object_t *object, xmms_error_t *error);
+static GTree *xmms_main_client_stats (xmms_object_t *object, xmms_error_t *error);
+static GList *xmms_main_client_plugin_list (xmms_object_t *main, gint32 type, xmms_error_t *err);
+static void xmms_main_client_hello (xmms_object_t *object, gint protocolver, const gchar *client, xmms_error_t *error);
 static void install_scripts (const gchar *into_dir);
+static void spawn_script_setup (gpointer data);
 static xmms_xform_object_t *xform_obj;
 static xmms_bindata_t *bindata_obj;
 
-XMMS_CMD_DEFINE (quit, quit, xmms_object_t*, NONE, NONE, NONE);
-XMMS_CMD_DEFINE (hello, hello, xmms_object_t *, NONE, INT32, STRING);
-XMMS_CMD_DEFINE (stats, stats, xmms_object_t *, DICT, NONE, NONE);
-XMMS_CMD_DEFINE (plugin_list, xmms_plugin_client_list, xmms_object_t *, LIST, INT32, NONE);
+XMMS_CMD_DEFINE (quit, xmms_main_client_quit, xmms_object_t*, NONE, NONE, NONE);
+XMMS_CMD_DEFINE (hello, xmms_main_client_hello, xmms_object_t *, NONE, INT32, STRING);
+XMMS_CMD_DEFINE (stats, xmms_main_client_stats, xmms_object_t *, DICT, NONE, NONE);
+XMMS_CMD_DEFINE (plugin_list, xmms_main_client_plugin_list, xmms_object_t *, LIST, INT32, NONE);
 
 /** @defgroup XMMSServer XMMSServer
   * @brief look at this if you want to code inside the server.
@@ -88,6 +90,7 @@ XMMS_CMD_DEFINE (plugin_list, xmms_plugin_client_list, xmms_object_t *, LIST, IN
 struct xmms_main_St {
 	xmms_object_t object;
 	xmms_output_t *output;
+	xmms_visualization_t *vis;
 	time_t starttime;
 };
 
@@ -103,7 +106,7 @@ static gchar *conffile = NULL;
  * This returns the main stats for the server
  */
 static GTree *
-stats (xmms_object_t *object, xmms_error_t *error)
+xmms_main_client_stats (xmms_object_t *object, xmms_error_t *error)
 {
 	GTree *ret;
 	gint starttime;
@@ -121,20 +124,50 @@ stats (xmms_object_t *object, xmms_error_t *error)
 	return ret;
 }
 
+static gboolean
+xmms_main_client_list_foreach (xmms_plugin_t *plugin, gpointer data)
+{
+	xmmsv_t *dict;
+	GList **list = data;
+
+	dict = xmmsv_build_dict (
+	        XMMSV_DICT_ENTRY_STR ("name", xmms_plugin_name_get (plugin)),
+	        XMMSV_DICT_ENTRY_STR ("shortname", xmms_plugin_shortname_get (plugin)),
+	        XMMSV_DICT_ENTRY_STR ("version", xmms_plugin_version_get (plugin)),
+	        XMMSV_DICT_ENTRY_STR ("description", xmms_plugin_description_get (plugin)),
+	        XMMSV_DICT_ENTRY_INT ("type", xmms_plugin_type_get (plugin)),
+	        XMMSV_DICT_END);
+
+	*list = g_list_prepend (*list, dict);
+
+	return TRUE;
+}
+
+static GList *
+xmms_main_client_plugin_list (xmms_object_t *main, gint32 type, xmms_error_t *err)
+{
+	GList *list = NULL;
+	xmms_plugin_foreach (type, xmms_main_client_list_foreach, &list);
+	return list;
+}
+
+
 /**
  * @internal Execute all programs or scripts in a directory. Used when starting
  * up and shutting down the daemon.
  *
  * @param[in] scriptdir Directory to search for executable programs/scripts.
  * started.
+ * @param     arg1 value passed to executed scripts as argument 1. This makes
+ * it possible to handle start and stop in one script
  */
 static void
-do_scriptdir (const gchar *scriptdir)
+do_scriptdir (const gchar *scriptdir, const gchar *arg1)
 {
 	GError *err = NULL;
 	GDir *dir;
 	const gchar *f;
-	gchar *argv[2] = {NULL, NULL};
+	gchar *argv[3] = {NULL, NULL, NULL};
 
 	XMMS_DBG ("Running scripts in %s", scriptdir);
 	if (!g_file_test (scriptdir, G_FILE_TEST_IS_DIR)) {
@@ -148,20 +181,31 @@ do_scriptdir (const gchar *scriptdir)
 		return;
 	}
 
+	argv[1] = g_strdup (arg1);
 	while ((f = g_dir_read_name (dir))) {
 		argv[0] = g_strdup_printf ("%s/%s", scriptdir, f);
 		if (g_file_test (argv[0], G_FILE_TEST_IS_EXECUTABLE)) {
-			if (!g_spawn_async (g_get_home_dir (),
-			                    argv, NULL, 0, NULL, NULL, NULL, &err)) {
+			if (!g_spawn_async (g_get_home_dir (), argv, NULL, 0,
+			                    spawn_script_setup, NULL, NULL, &err)) {
 				xmms_log_error ("Could not run script '%s', error: %s",
 				                argv[0], err->message);
 			}
 		}
 		g_free (argv[0]);
 	}
+	g_free (argv[1]);
 
 	g_dir_close (dir);
 
+}
+
+/**
+ * @internal Setup function for processes spawned by do_scriptdir
+ */
+static void
+spawn_script_setup (gpointer data)
+{
+	xmms_signal_restore ();
 }
 
 /**
@@ -169,7 +213,7 @@ do_scriptdir (const gchar *scriptdir)
  * if needed.
  */
 static void
-load_config ()
+load_config (void)
 {
 	gchar configdir[PATH_MAX];
 
@@ -230,7 +274,7 @@ xmms_main_destroy (xmms_object_t *object)
 	xmms_config_property_t *cv;
 
 	cv = xmms_config_lookup ("core.shutdownpath");
-	do_scriptdir (xmms_config_property_get_string (cv));
+	do_scriptdir (xmms_config_property_get_string (cv), "stop");
 
 	/* stop output */
 	xmms_object_cmd_arg_init (&arg);
@@ -240,7 +284,7 @@ xmms_main_destroy (xmms_object_t *object)
 
 	g_usleep (G_USEC_PER_SEC); /* wait for the output thread to end */
 
-	xmms_visualization_destroy ();
+	xmms_object_unref (mainobj->vis);
 	xmms_object_unref (mainobj->output);
 
 	xmms_object_unref (xform_obj);
@@ -261,7 +305,7 @@ xmms_main_destroy (xmms_object_t *object)
  * @internal Function to respond to the 'hello' sent from clients on connect
  */
 static void
-hello (xmms_object_t *object, gint protocolver, const gchar *client, xmms_error_t *error)
+xmms_main_client_hello (xmms_object_t *object, gint protocolver, const gchar *client, xmms_error_t *error)
 {
 	if (protocolver != XMMS_IPC_PROTOCOL_VERSION) {
 		xmms_log_info ("Client '%s' with bad protocol version (%d, not %d) connected", client, protocolver, XMMS_IPC_PROTOCOL_VERSION);
@@ -288,7 +332,7 @@ kill_server (gpointer object) {
  * @internal Function to respond to the 'quit' command sent from a client
  */
 static void
-quit (xmms_object_t *object, xmms_error_t *error)
+xmms_main_client_quit (xmms_object_t *object, xmms_error_t *error)
 {
 	/*
 	 * to be able to return from this method
@@ -325,6 +369,8 @@ install_scripts (const gchar *into_dir)
 		gchar *source = g_strdup_printf ("%s/%s", path, f);
 		gchar *dest = g_strdup_printf ("%s/%s", into_dir, f);
 		if (!xmms_symlink_file (source, dest)) {
+			g_free (source);
+			g_free (dest);
 			break;
 		}
 		g_free (source);
@@ -337,8 +383,8 @@ install_scripts (const gchar *into_dir)
 /**
  * Just print version and quit
  */
-void
-print_version ()
+static void
+print_version (void)
 {
 	printf ("XMMS2 version " XMMS_VERSION "\n");
 	printf ("Copyright (C) 2003-2009 XMMS2 Team\n");
@@ -424,7 +470,7 @@ main (int argc, char **argv)
 	}
 	if (showhelp) {
 #if GLIB_CHECK_VERSION(2,14,0)
-		g_print (g_option_context_get_help (context, TRUE, NULL));
+		g_print ("%s", g_option_context_get_help (context, TRUE, NULL));
 		exit (EXIT_SUCCESS);
 #else
 		g_print ("Please use --help or -? for help\n");
@@ -510,7 +556,7 @@ main (int argc, char **argv)
 	                                    change_output, mainobj);
 
 	if (outname) {
-		xmms_config_setvalue (NULL, "output.plugin", outname, NULL);
+		xmms_config_property_set_data (cv, outname);
 	}
 
 	outname = xmms_config_property_get_string (cv);
@@ -525,7 +571,8 @@ main (int argc, char **argv)
 	if (!mainobj->output) {
 		xmms_log_fatal ("Failed to create output object!");
 	}
-	xmms_visualization_init (mainobj->output);
+
+	mainobj->vis = xmms_visualization_new (mainobj->output);
 
 	if (status_fd != -1) {
 		write (status_fd, "+", 1);
@@ -563,10 +610,10 @@ main (int argc, char **argv)
 		*tmp = '\0';
 	}
 
-	putenv (g_strdup_printf ("XMMS_PATH=%s", default_path));
+	g_setenv ("XMMS_PATH", default_path, TRUE);
 
 	/* Also put the full path for clients that understands */
-	putenv (g_strdup_printf ("XMMS_PATH_FULL=%s", ipcpath));
+	g_setenv("XMMS_PATH_FULL", ipcpath, TRUE);
 
 	tmp = XMMS_BUILD_PATH ("shutdown.d");
 	cv = xmms_config_property_register ("core.shutdownpath",
@@ -579,7 +626,7 @@ main (int argc, char **argv)
 	g_free (tmp);
 
 	/* Startup dir */
-	do_scriptdir (xmms_config_property_get_string (cv));
+	do_scriptdir (xmms_config_property_get_string (cv), "start");
 
 	mainloop = g_main_loop_new (NULL, FALSE);
 

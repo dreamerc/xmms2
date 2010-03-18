@@ -44,13 +44,18 @@ xmms_converter_plugin_init (xmms_xform_t *xform)
 	intype = xmms_xform_intype_get (xform);
 	goal_hints = xmms_xform_goal_hints_get (xform);
 
-	conv = xmms_sample_audioformats_coerce (intype, goal_hints);
+	to = xmms_stream_type_coerce (intype, goal_hints);
+	if (!to) {
+		return FALSE;
+	}
+
+	conv = xmms_sample_converter_init (intype, to);
 	if (!conv) {
 		return FALSE;
 	}
 
-	to = xmms_sample_converter_get_to (conv);
 	xmms_xform_outdata_type_set (xform, to);
+	xmms_object_unref (to);
 
 	data = g_new0 (xmms_conv_xform_data_t, 1);
 	data->conv = conv;

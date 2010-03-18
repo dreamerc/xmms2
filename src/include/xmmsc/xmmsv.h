@@ -17,6 +17,7 @@
 #ifndef __XMMSV_H__
 #define __XMMSV_H__
 
+#include <stdarg.h>
 #include "xmmsc/xmmsc_compiler.h"
 #include "xmmsc/xmmsc_stdint.h"
 #include "xmmsc/xmmsv_coll.h"
@@ -81,9 +82,6 @@ typedef void (*xmmsv_dict_foreach_func) (const char *key, xmmsv_t *value, void *
 
 /* legacy transitional utilities */
 xmmsv_type_t xmmsv_dict_entry_get_type (xmmsv_t *val, const char *key);
-int xmmsv_dict_entry_get_string (xmmsv_t *val, const char *key, const char **r);
-int xmmsv_dict_entry_get_int (xmmsv_t *val, const char *key, int32_t *r);
-int xmmsv_dict_entry_get_coll (xmmsv_t *val, const char *key, xmmsv_coll_t **coll);
 xmmsv_t *xmmsv_propdict_to_dict (xmmsv_t *propdict, const char **src_prefs);
 
 int xmmsv_get_error (const xmmsv_t *val, const char **r);
@@ -106,10 +104,27 @@ int xmmsv_list_set (xmmsv_t *listv, int pos, xmmsv_t *val);
 int xmmsv_list_append (xmmsv_t *listv, xmmsv_t *val);
 int xmmsv_list_insert (xmmsv_t *listv, int pos, xmmsv_t *val);
 int xmmsv_list_remove (xmmsv_t *listv, int pos);
+int xmmsv_list_move (xmmsv_t *listv, int old_pos, int new_pos);
 int xmmsv_list_clear (xmmsv_t *listv);
 int xmmsv_list_foreach (xmmsv_t *listv, xmmsv_list_foreach_func func, void* user_data);
 int xmmsv_list_get_size (xmmsv_t *listv);
 int xmmsv_list_restrict_type (xmmsv_t *listv, xmmsv_type_t type);
+
+int xmmsv_list_get_string (xmmsv_t *v, int pos, const char **val);
+int xmmsv_list_get_int (xmmsv_t *v, int pos, int32_t *val);
+int xmmsv_list_get_coll (xmmsv_t *v, int pos, xmmsv_coll_t **val);
+
+int xmmsv_list_set_string (xmmsv_t *v, int pos, const char *val);
+int xmmsv_list_set_int (xmmsv_t *v, int pos, int32_t val);
+int xmmsv_list_set_coll (xmmsv_t *v, int pos, xmmsv_coll_t *val);
+
+int xmmsv_list_insert_string (xmmsv_t *v, int pos, const char *val);
+int xmmsv_list_insert_int (xmmsv_t *v, int pos, int32_t val);
+int xmmsv_list_insert_coll (xmmsv_t *v, int pos, xmmsv_coll_t *val);
+
+int xmmsv_list_append_string (xmmsv_t *v, const char *val);
+int xmmsv_list_append_int (xmmsv_t *v, int32_t val);
+int xmmsv_list_append_coll (xmmsv_t *v, xmmsv_coll_t *val);
 
 int  xmmsv_list_iter_entry (xmmsv_list_iter_t *it, xmmsv_t **val);
 int  xmmsv_list_iter_valid (xmmsv_list_iter_t *it);
@@ -124,6 +139,15 @@ xmmsv_t *xmmsv_list_iter_get_parent (const xmmsv_list_iter_t *it);
 int  xmmsv_list_iter_insert (xmmsv_list_iter_t *it, xmmsv_t *val);
 int  xmmsv_list_iter_remove (xmmsv_list_iter_t *it);
 
+int xmmsv_list_iter_entry_string (xmmsv_list_iter_t *it, const char **val);
+int xmmsv_list_iter_entry_int (xmmsv_list_iter_t *it, int32_t *val);
+int xmmsv_list_iter_entry_coll (xmmsv_list_iter_t *it, xmmsv_coll_t **val);
+
+int xmmsv_list_iter_insert_string (xmmsv_list_iter_t *it, const char *val);
+int xmmsv_list_iter_insert_int (xmmsv_list_iter_t *it, int32_t val);
+int xmmsv_list_iter_insert_coll (xmmsv_list_iter_t *it, xmmsv_coll_t *val);
+
+
 /* Dict */
 int xmmsv_dict_get (xmmsv_t *dictv, const char *key, xmmsv_t **val);
 int xmmsv_dict_set (xmmsv_t *dictv, const char *key, xmmsv_t *val);
@@ -133,6 +157,14 @@ int xmmsv_dict_foreach (xmmsv_t *dictv, xmmsv_dict_foreach_func func, void *user
 int xmmsv_dict_get_size (xmmsv_t *dictv);
 int xmmsv_dict_has_key (xmmsv_t *dictv, const char *key);
 
+int xmmsv_dict_entry_get_string (xmmsv_t *val, const char *key, const char **r);
+int xmmsv_dict_entry_get_int (xmmsv_t *val, const char *key, int32_t *r);
+int xmmsv_dict_entry_get_coll (xmmsv_t *val, const char *key, xmmsv_coll_t **coll);
+
+int xmmsv_dict_set_string (xmmsv_t *val, const char *key, const char *el);
+int xmmsv_dict_set_int (xmmsv_t *val, const char *key, int32_t el);
+int xmmsv_dict_set_coll (xmmsv_t *val, const char *key, xmmsv_coll_t *el);
+
 int  xmmsv_dict_iter_pair (xmmsv_dict_iter_t *it, const char **key, xmmsv_t **val);
 int  xmmsv_dict_iter_valid (xmmsv_dict_iter_t *it);
 void xmmsv_dict_iter_first (xmmsv_dict_iter_t *it);
@@ -141,6 +173,14 @@ int  xmmsv_dict_iter_find (xmmsv_dict_iter_t *it, const char *key);
 
 int  xmmsv_dict_iter_set (xmmsv_dict_iter_t *it, xmmsv_t *val);
 int  xmmsv_dict_iter_remove (xmmsv_dict_iter_t *it);
+
+int xmmsv_dict_iter_pair_string (xmmsv_dict_iter_t *it, const char **key, const char **r);
+int xmmsv_dict_iter_pair_int (xmmsv_dict_iter_t *it, const char **key, int32_t *r);
+int xmmsv_dict_iter_pair_coll (xmmsv_dict_iter_t *it, const char **key, xmmsv_coll_t **r);
+
+int xmmsv_dict_iter_set_string (xmmsv_dict_iter_t *it, const char *elem);
+int xmmsv_dict_iter_set_int (xmmsv_dict_iter_t *it, int32_t elem);
+int xmmsv_dict_iter_set_coll (xmmsv_dict_iter_t *it, xmmsv_coll_t *elem);
 
 /* Utils */
 
@@ -161,6 +201,15 @@ static inline xmmsv_t *__xmmsv_identity_xmmsv (xmmsv_t *v) {return v;}
 #define XMMSV_DICT_ENTRY_INT(k, v) XMMSV_DICT_ENTRY (k, xmmsv_new_int (v))
 #define XMMSV_DICT_END NULL
 xmmsv_t *xmmsv_build_dict (const char *firstkey, ...);
+
+#define XMMSV_LIST_ENTRY(v) __xmmsv_identity_xmmsv (v)
+#define XMMSV_LIST_ENTRY_STR(v) XMMSV_LIST_ENTRY (xmmsv_new_string (v))
+#define XMMSV_LIST_ENTRY_INT(v) XMMSV_LIST_ENTRY (xmmsv_new_int (v))
+#define XMMSV_LIST_ENTRY_COLL(v) XMMSV_LIST_ENTRY (xmmsv_new_coll (v))
+#define XMMSV_LIST_END NULL
+
+xmmsv_t *xmmsv_build_list (xmmsv_t *first_entry, ...);
+xmmsv_t *xmmsv_build_list_va (xmmsv_t *first_entry, va_list ap);
 
 #ifdef __cplusplus
 }

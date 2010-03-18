@@ -1,3 +1,391 @@
+Changes between 0.6 DrMattDestruction+WIP+TEST3 and 0.7 DrNo
+
+ Release date: 2010-02-19
+ Authors contributing to this release: 2
+ Number of changesets: 3
+ Number of files in this release: 653
+
+ Erik Massop:
+  * OTHER: Remove some non-implemented flags from nycli help.
+
+ Sebastien Cevey:
+  * BUG(2236): Fix toggle in shell-mode, ensure the cache is always consistent
+  * OTHER: Make readline check depend on glib2 to force waf to look in the right place (fixes lookup in OSX)
+
+
+
+Changes between 0.6 DrMattDestruction+WIP+TEST2 and 0.6 DrMattDestruction+WIP+TEST3
+
+ Release date: 2010-02-16
+ Authors contributing to this release: 3
+ Number of changesets: 7
+ Number of files in this release: 653
+
+ Anders Waldenborg:
+  * BUG(2314): Fix "server shutdown" to use sync so aliases work.
+  * Revert "BUG(2314): Fixed running aliases in inline mode."
+
+ Sebastien Cevey:
+  * BUG(2327): Fix nycli add with paths ending in '.' or '..'
+  * OTHER: Nicer fix for requiring position for move command.
+  * OTHER: Remove dependency on rl_filename_dequoting_function and, hopefully, readline
+
+ Thomas Frauendorfer:
+  * BUG(2328): Fix install path for ruby extension
+  * OTHER: Waf fix for symlink creation (from WAF-r7011)
+
+
+
+Changes between 0.6 DrMattDestruction+WIP+TEST1 and 0.6 DrMattDestruction+WIP+TEST2
+
+ Release date: 2010-02-03
+ Authors contributing to this release: 4
+ Number of changesets: 9
+ Number of files in this release: 653
+
+ Adam Nielsen:
+  * BUG(2320): Fixed a segfault in the wavpack plugin on open failure.
+
+ Romain Boissat:
+  * BUG(2318): Documented the SHELL_START_MESSAGE variable in the nycli manpage.
+
+ Thomas Frauendorfer:
+  * BUG(2316): use g_atomic methods for xmms_object_ref/_unref
+  * BUG(2317): Fix coreaudio (was broken in waf upgrade)
+  * OTHER: Bump xmmsclient version (seek changes)
+  * OTHER: Bump xmmsclient++ version (boost-signals removed, seek changes)
+
+ Tilman Sauerbeck:
+  * BUG(2314): Fixed running aliases in inline mode.
+  * BUG(2315): Added a missing xmmsv_ref() call in xmmsc_vis_properties_set().
+  * OTHER: Added Romain Boissat to AUTHORS.
+
+
+
+Changes between 0.6 DrMattDestruction and 0.6 DrMattDestruction+WIP+TEST1
+
+ Release date: 2010-01-25
+ Authors contributing to this release: 24
+ Number of changesets: 267
+ Number of files in this release: 653
+
+ Adam Nielsen:
+  * FEATURE(2308): Made modplug options user-configurable.
+
+ Alexander Botero-Lowry:
+  * OTHER: update my email address
+
+ Anders Waldenborg:
+  * BUG(2217): Fix potential crash on invalid collection ipc data.
+  * BUG(2243): Start mediainfo reader _after_ initializing colldag.
+  * BUG(2261): Fix crash in pythonbindings when adding None operands to collections.
+  * BUG(2278): Properly cleanup on errorpath in daap avahi backend.
+  * OTHER: Add Sin-Da Hsiea to AUTHORS
+  * OTHER: Add compability functions to pythonbindings for configval stuff.
+  * OTHER: Add declarations for new xmmsv extractor functions.
+  * OTHER: Add testcases for streamtype.
+  * OTHER: Add xmms_xform_browse function and make the IPC exported variant static
+  * OTHER: Avoid referencing uninitialized variable in xmms_object_disconnect
+  * OTHER: Check if boost is installed before trying to build xmmsclient++
+  * OTHER: Consistently name functions exported to IPC xmms_{obj}_client_{method}
+  * OTHER: Correct playlist_positions_new declaration in nycli.
+  * OTHER: Deprecate old cli.
+  * OTHER: Don't dereference NULL pointer.
+  * OTHER: Don't mask variables.
+  * OTHER: Don't use client method when forcing output.plugin config value.
+  * OTHER: Enable more gcc warnings.
+  * OTHER: Fix all declarations of IPC exported functions.
+  * OTHER: Fix formatting when printing mismatching magic.
+  * OTHER: Fix function prototype in airplay plugin.
+  * OTHER: Fix function prototypes in daap plugin.
+  * OTHER: Fix function prototypes in nycli headers.
+  * OTHER: Fix memleak on error path.
+  * OTHER: Fix ordering on rinsert
+  * OTHER: Fix potential memory leak on errorpath in xmmsc_deserialize_dict
+  * OTHER: Fix some warnigs in visualization.
+  * OTHER: Fix some warnings in xmmsipc
+  * OTHER: Fix warnigs in src/xmms/main.c
+  * OTHER: Fix xmmsc_result_get_class after IPC id rework.
+  * OTHER: Include function declaration in XMMS_CMD_DEFINE so it is verified.
+  * OTHER: Include header in xmmsclient-glib so prototypes are verified.
+  * OTHER: Make bindata.c include bindata.h so prototypes are verified.
+  * OTHER: Make function declarations proper prototypes in collsync.h
+  * OTHER: Make function declarations proper prototypes in xmsm2d.
+  * OTHER: Make lots of xmms_{obj}_client_{method} functions static.
+  * OTHER: Make proper xmms_collection_{sync,query_ids} and make IPC exported functions static.
+  * OTHER: Make wait_for_socket static.
+  * OTHER: Mark a few functions in nycli static.
+  * OTHER: Mark some functions static in pulse plugin
+  * OTHER: Move xmms_plugin_client_list to xmms_main_client_plugin_list
+  * OTHER: Only enable extra warnings if compiler supports them.
+  * OTHER: Properly ignore return value from non-signal/broadcast callbacks.
+  * OTHER: Remove a few orphan prototypes.
+  * OTHER: Remove unused xmms_log_debug from clientlib.
+  * OTHER: Remove useless timeout function from daap_mdns_avahi
+  * OTHER: Rename xmmsc_playback_seek_{ms,samples} to *_abs
+
+ Anthony Garcia:
+  * BUG(2004): hexdump of unmatched chunk
+  * BUG(2214): nycli command history preservation
+  * BUG(2216): nycli command lists, duplicate code cleanup
+  * BUG(2222): nycli fails to add non-browseable URLs containing '*' /or '?'
+  * BUG(2251): Give ices and diskwrite priorities > 0
+  * BUG(2260): Set playlist marker in column-style output
+  * OTHER: Don't ignore PLAYLIST_MARKER
+  * OTHER: Fix a couple compile warnings
+  * OTHER: Grok control chars
+  * OTHER: Update AUTHORS, add TAGS to .gitignore
+  * OTHER: Use xmmsv_dict_has_key
+  * OTHER: nycli: Document AUTO_UNIQUE_COMPLETE
+  * OTHER: nycli: Fix nycli compilation warnings
+
+ Daniel Chokola:
+  * BUG(1643): split vorbis into vorbis and tremor plugins
+  * BUG(2253): use G_MODULE_BIND_LOCAL to avoid symbol collisions
+  * OTHER: add WIP to version
+  * OTHER: change my personal info
+  * OTHER: clean up vorbis wscript
+  * OTHER: make xmms_ipc_msg_store_uint32 static as it's only used in msg.c
+  * OTHER: remove #define _GNU_SOURCE from daap/cc_handlers.c
+
+ Daniel Svensson:
+  * BUG(2307): Let PulseAudio take care of the initial volume.
+  * OTHER: Add 24 and 32 bit support to FLAC.
+  * OTHER: Add Dean Scarff to the AUTHORS file
+  * OTHER: Add S32 support to PulseAudio backend.
+  * OTHER: Add a header with the xmms_file_browse prototype
+  * OTHER: Add prototype to backport of g_file_query_file_type
+  * OTHER: Add test case for coerce.
+  * OTHER: Backport g_file_query_file_type for mlib updater
+  * OTHER: Change licensing of waf ruby tool to BSD.
+  * OTHER: Don't accept empty watch_dirs configuration
+  * OTHER: Fix a logic typo in stream_type_coerce.
+  * OTHER: Fix some prototypes
+  * OTHER: Fix some prototypes in daap
+  * OTHER: Improve conversion failed error message.
+  * OTHER: Improve format_set error message.
+  * OTHER: Make sure important stream type properties are set.
+  * OTHER: Move xmms_sample_audioformats_coerce to streamtype.c.
+  * OTHER: Require position for move command.
+  * OTHER: Return values are good values, treasure them!
+  * OTHER: Rewrite xmms2-mlib-updater
+  * OTHER: Update xmms_bindata_calculate_md5 to match its prototype
+  * OTHER: auxdata_get_bin is const in avcodec, lets copy.
+  * OTHER: auxdata_get_bin is const, lets copy.
+  * OTHER: faad samplerate is guint32, nsot gulong.
+
+ Dean Scarff:
+  * BUG(2191,2232): Add means to shutdown a CF-bound client session.
+
+ Deng Xiyue:
+  * BUG(2274): Another fix for sun_path
+
+ Erik Massop:
+  * BUG(2227): Fix compilation of python bindings.
+  * BUG(2241): Fix resolving REFERENCEs
+  * FEATURE(1957): Make mlib more uniform.
+  * FEATURE(2196): Use '*' for Universe in collparser
+  * OTHER: Abolish a number of deprecated coll functions
+  * OTHER: Add Jan Pobrislo / ccx to AUTHORS
+  * OTHER: Add some type-specific list/dict functions
+  * OTHER: Add testcase for xmmsv_list_move
+  * OTHER: Add xmmsv_list_move
+  * OTHER: Allow negative integers for integer collation
+  * OTHER: Capitalize, indent some SQL
+  * OTHER: Create a number of extractor functions
+  * OTHER: Create an unary xmms_sqlite_source_pref-function
+  * OTHER: Explicitly destroy iters in python bindings.
+  * OTHER: Make dict extractors non-legacy
+  * OTHER: Make perl bindings compile again.
+  * OTHER: Make url-matching a bit more precise
+  * OTHER: Minor indentation fix
+  * OTHER: No source-pref on m0 needed if we are not actually using it.
+  * OTHER: Properly determine result type.
+  * OTHER: Refactor database creation
+  * OTHER: Remove a number of deprecation warnings
+  * OTHER: Say where the cli config is.
+  * OTHER: Split schema into components
+  * OTHER: Sqlite function returned uninitialized var
+  * OTHER: Typo in COPYING
+  * OTHER: Use source-preference in collquery.c
+
+ Florian Ragwitz:
+  * OTHER: De-tabify COPYING.
+  * OTHER: Install the pure-perl parts of the perl bindings to the right location.
+
+ Hugh Davenport:
+  * BUG(2291): Made nyxmms2 read the ipcpath from the config file.
+
+ Igor Assis:
+  * BUG(2201): Make aliases using 'status' work properly.
+
+ Jan Pobrislo:
+  * BUG(2256): Make running ldconfig optional
+
+ Jonne Lehtinen:
+  * BUG(1401): Catch only Xmms::exceptions.
+  * FEATURE(2218): Remove boost.signals dependency.
+  * OTHER: Missing copyleft stuff...
+  * OTHER: Remove execute tag from dict.h
+
+ Kyle Kramer:
+  * FEATURE(2306): Added sc68 xform.
+
+ Raphaël Bois:
+  * BUG(2208): Add missing format in *printf() calls.
+  * BUG(2297): Fix wrong function call in XMMSSync.
+
+ Sebastian Noack:
+  * OTHER: Fixed xmms2-find-avahi. Do not quit before all resolvers are finished.
+
+ Sebastien Cevey:
+  * BUG(2286): Change nyxmms2 playlist sort to accept properties as arguments and playlist as optional flag
+  * FEATURE(2262): Working trie-based completion of commands and subcommands (not arguments, and only in readline mode).
+  * OTHER: Fix bug in 'add' command of nycli that caused multiple files to be inserted in reverse order.
+  * OTHER: Fix playlist_radd/rinsert reverse-ordering
+  * OTHER: Guess implicit --file if 'nyxmms2 add' arguments match valid local paths
+  * OTHER: Make 'quit' in nycli shutdown the server, add help message when starting shell mode (optional)
+
+ Sergei Trofimovich:
+  * OTHER: cli: Config file was not freed after reading and parsing it.
+  * OTHER: cli: mdns-avahi: fix leaks, wrong/double deallocation on error paths
+  * OTHER: core: bindata file was not closed in some subtle error cases.
+  * OTHER: core: fix leaky val allocated in xmms_stream_type_parse on unknown type
+  * OTHER: daap_mdns_avahi: server/opaque resource leak fixes
+  * OTHER: daap_mdns_avahi: split 'daap_mdns_resolve_cb' on 2 callbacks
+  * OTHER: ices: fixing memleak on error path.
+  * OTHER: nycli: adding deallocation ot error path
+  * OTHER: sid: Fixed ReSIDBuilder object leak in error paths.
+
+ Sin-Da Hsiea:
+  * BUG(2231): query_append_operand should set op to NULL
+
+ Thomas Frauendorfer:
+  * BUG(2206): Fix minor leak in xmms_mediainfo_reader_thread
+  * BUG(2206): Fix minor memleak in install_scripts
+  * BUG(2206): deinitialize ao library if new function returns FALSE
+  * BUG(2206): free curl_data if initialisation failed
+  * BUG(2244): add xmms_output_curret_id function to fix ices failure
+  * BUG(2264): add return value to iserror
+  * BUG(2271): Use gnu_dirs tool for install pathes
+  * BUG(2273): Restore signals for spawned processes
+  * BUG(2287): disable ape on 64bit machine for broken monkey's audio
+  * FEATURE(2305): Use shared library for gme plugin
+  * OTHER: Add Sergei Trofimovich to AUTHORS
+  * OTHER: Change type 'objects' to 'cc' in wscript
+  * OTHER: Change wscripts from optionals from return values to exceptions
+  * OTHER: Fix bad #ifdef in flac plugin
+  * OTHER: Fix memleak in dict.cpp
+  * OTHER: Fix small memory leak in the visualisation clients
+  * OTHER: Free format_list when changeing output plugin
+  * OTHER: Rewrite check for supported compiler flags
+  * OTHER: Use config header for defining oss default device
+  * OTHER: WAF_HOME is no longer needed by waf
+  * OTHER: add -Wall compile option
+  * OTHER: add missing return values to medialib_updater
+  * OTHER: autogenerate -Wno-<warning> uselibs
+  * OTHER: change a variable in apefile plugin from guint to gint
+  * OTHER: change shlib to cshlib in avcodec test
+  * OTHER: changes to make ruby bindings build again
+  * OTHER: check for sys/select.h header in airplay plugin
+  * OTHER: disable missing-prototypes warnings for mp4 plugin
+  * OTHER: disable strict-prototype warning for ruby client lib
+  * OTHER: fix leaks in daap plugin
+  * OTHER: fix path for windows build
+  * OTHER: fix prototype warnings in cli
+  * OTHER: fix prototype warnings in visualisation clients
+  * OTHER: fix three prototype warnings for the Ruby bindings
+  * OTHER: fix warning and include pathes in tests wscript
+  * OTHER: fix warnings in ices plugin
+  * OTHER: move preparing metadata in ices plugin into own function
+  * OTHER: pass "start" and "stop" as argument to executed scripts
+  * OTHER: reduce default priority of gvfs plugin.
+  * OTHER: remove unused xmms_strnlen function
+  * OTHER: rename daap_mdns_initialize to daap_mdns_setup and use returnvalue
+  * OTHER: replace 'print' and 'stdout.write' with Utils.pprint
+  * OTHER: replace a deprecated function in old cli
+  * OTHER: replace putenv witch g_setenv
+  * OTHER: replace xmmsc_entry_format with xmmsv_dict_format in cli
+  * OTHER: some win32 fixes
+  * OTHER: test for possible null pointer in xmms_object_cmd_call
+  * OTHER: unref a leaked result in cmd_coll
+  * OTHER: update *_get_error in visclients to new methods
+  * OTHER: update cli to xmmsv_get_error
+  * OTHER: update python seek methods
+  * OTHER: update seek calls in cli
+  * OTHER: update waf to 1.5.10
+  * OTHER: update xmmsc_plugin_list calls to xmmsc_main_list_plugins in two places
+  * OTHER: updated get_error in ruby bindings to new method
+  * OTHER: use current_id signal in ices plugin
+  * OTHER: use named parameter to set tooldir for tool_options()
+  * OTHER: use sigemptyset to initialize sigset_t
+  * OTHER: write xmms_configuration.h from base wscript
+
+ Tilman Sauerbeck:
+  * BUG(1897): Removed unused function uint_get() from the Ruby bindings.
+  * BUG(2257): Fixed the medialib.add_url IPC command.
+  * BUG(2280): Added a missing 'cb' argument to coll_idlist_from_playlist_file.
+  * BUG(2283): Properly handle trailing backslashes in the collparser.
+  * BUG(2292): Fix a bad free() in the shuffle command.
+  * OTHER: Added Adam Nielsen to AUTHORS.
+  * OTHER: Added Kyle Kramer to AUTHORS.
+  * OTHER: Added my new GPG key to AUTHORS.
+  * OTHER: Added new seek functions which take a xmms_playback_seek_mode_t.
+  * OTHER: Added xmms_ipc_msg_get_value() as an alias for _get_value_alloc().
+  * OTHER: Added xmmsc_send_cmd() as a replacement for xmmsc_send_msg().
+  * OTHER: Added xmmsv_build_list().
+  * OTHER: Added xmmsv_build_list_va().
+  * OTHER: All IPC method call arguments are tagged (XMMSV_TYPE_*) now.
+  * OTHER: Assert that there are only non-NULL xmms_object_handler_entry_t's.
+  * OTHER: Cleaned up some code in xmms_output_plugin_verify().
+  * OTHER: Compile with -Wwrite-strings if supported.
+  * OTHER: Declare a few more functions static.
+  * OTHER: Don't leak file if we cannot get an enumerator.
+  * OTHER: Don't pass a result to print_config, it's not evaluated anyway.
+  * OTHER: Don't read the XMMS_PATH environment variable directly in nyxmms2.
+  * OTHER: Don't try to xmmsv_unref (NULL).
+  * OTHER: Don't use -Wwrite-strings for the Python bindings.
+  * OTHER: Don't use strlen() to see whether a string is empty or not.
+  * OTHER: Don't use xmmsv_coll_attribute_foreach() when writing colls to DB.
+  * OTHER: Don't use xmmsv_coll_attribute_foreach() when writing colls to IPC.
+  * OTHER: Extract signal/broadcast registering out of process_msg().
+  * OTHER: Fixed a few trivial warnings in nycli.
+  * OTHER: Fixed a potential buffer overflow.
+  * OTHER: Fixed bindir and libdir paths in pkg-config files.
+  * OTHER: IPC method call arguments are now passed as xmmsv_t lists.
+  * OTHER: Improve main/visualization/output interaction.
+  * OTHER: Improved config IPC method names.
+  * OTHER: Include plugin's name when printing error messages about it.
+  * OTHER: Install pkg-config files in $LIBDIR/pkgconfig.
+  * OTHER: Install plugins in $LIBDIR/xmms2 rather than $PREFIX/lib/xmms2.
+  * OTHER: Made XMMS_CMD_DEFINE make xmms_object_cmd_desc_t variables static.
+  * OTHER: Made libxmmsclient use xmmsc_send_cmd() in most places.
+  * OTHER: Made the Ruby bindings compatible to Ruby 1.9.1.
+  * OTHER: Moved XMMS_IPC_OBJECT_SIGNAL to the front of the enum.
+  * OTHER: Remove calls to xmmsc_coll_attribute_foreach() in the Ruby bindings.
+  * OTHER: Removed an unneeded cast.
+  * OTHER: Removed some unused variables.
+  * OTHER: Removed two unused variables.
+  * OTHER: Removed unused xmmsc_ipc_msg_* functions.
+  * OTHER: Renamed the 'output' IPC object to 'playback'.
+  * OTHER: Renamed xmmsc_mlib_path_import to _import_path.
+  * OTHER: Renamed xmmsc_plugin_list to xmmsc_main_list_plugins.
+  * OTHER: Reworked IPC method IDs.
+  * OTHER: Unify the playback.seek and seek_rel commands on the server side.
+  * OTHER: xmms_object_cmd_desc_t's are constant.
+  * OTHER: xmmsc_playlist_sort() may only be called with string properties.
+
+ Tobias Rundstrom:
+  * BUG(2263): Don't assume that sun_path is 104.
+  * OTHER: Added my other e-mail address
+  * OTHER: Fix wscript so that we don't add the framework flag more than once
+  * OTHER: We want to link to CoreComponent as well
+
+ Łukasz P. Michalik:
+  * BUG(2255): Commas at end of enumerator list are errors in C++
+
+
+
 Changes between 0.5 DrLecter+WIP+TEST2 and 0.6 DrMattDestruction
 
  Release date: 2009-04-21

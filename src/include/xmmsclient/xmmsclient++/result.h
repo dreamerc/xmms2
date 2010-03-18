@@ -1,3 +1,19 @@
+/*  XMMS2 - X Music Multiplexer System
+ *  Copyright (C) 2003-2009 XMMS2 Team
+ *
+ *  PLUGINS ARE NOT CONSIDERED TO BE DERIVED WORK !!!
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
+ *
+ *  This library is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *  Lesser General Public License for more details.
+ */
+
 #ifndef XMMSCLIENTPP_RESULT_H
 #define XMMSCLIENTPP_RESULT_H
 
@@ -67,15 +83,15 @@ namespace Xmms
 			}
 
 			virtual void
-			operator()( typename Signal<T>::signal_t::slot_type slot )
+			operator()( typename Signal<T>::signal_t::value_type slot )
 			{
 				connect( slot );
 				(*this)();
 			}
 
 			virtual void
-			operator()( typename Signal<T>::signal_t::slot_type slot,
-			            boost::function< bool( const std::string& ) > error )
+			operator()( typename Signal<T>::signal_t::value_type slot,
+			            SignalInterface::error_sig::value_type error )
 			{
 				connect( slot );
 				connectError( error );
@@ -83,21 +99,21 @@ namespace Xmms
 			}
 
 			virtual void
-			connect( typename Signal<T>::signal_t::slot_type slot )
+			connect( typename Signal<T>::signal_t::value_type slot )
 			{
 				if( !sig_ ) {
 					sig_ = new Signal< T >;
 				}
-				sig_->signal.connect( slot );
+				sig_->signal.push_back( slot );
 			}
 
 			virtual void
-			connectError( boost::function< bool( const std::string& ) > error )
+			connectError( SignalInterface::error_sig::value_type error )
 			{
 				if( !sig_ ) {
 					sig_ = new Signal< T >;
 				}
-				sig_->error_signal.connect( error );
+				sig_->error_signal.push_back( error );
 			}
 
 		protected:

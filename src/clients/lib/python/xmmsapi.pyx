@@ -67,6 +67,10 @@ cdef extern from "xmmsc/xmmsc_idnumbers.h":
 		XMMS_COLLECTION_CHANGED_RENAME,
 		XMMS_COLLECTION_CHANGED_REMOVE
 
+	ctypedef enum xmms_playback_seek_mode_t:
+		XMMS_PLAYBACK_SEEK_CUR,
+		XMMS_PLAYBACK_SEEK_SET
+
 cdef extern from "xmmsc/xmmsv.h":
 	ctypedef enum xmmsv_type_t:
 		XMMSV_TYPE_NONE,
@@ -130,6 +134,8 @@ cdef extern from "xmmsc/xmmsv.h":
 	int  xmmsv_list_iter_insert (xmmsv_list_iter_t *it, xmmsv_t *val)
 	int  xmmsv_list_iter_remove (xmmsv_list_iter_t *it)
 
+	void xmmsv_list_iter_explicit_destroy (xmmsv_list_iter_t *it)
+
 	ctypedef void (*xmmsv_dict_foreach_func) (char *key, xmmsv_t *value, void *user_data)
 
 	int  xmmsv_dict_get     (xmmsv_t *dictv, char *key, xmmsv_t **val)
@@ -143,6 +149,7 @@ cdef extern from "xmmsc/xmmsv.h":
 	int  xmmsv_get_dict_iter   (xmmsv_t *val, xmmsv_dict_iter_t **it)
 
 	int  xmmsv_dict_iter_pair  (xmmsv_dict_iter_t *it, xmms_pyrex_constcharp_t *key, xmmsv_t **val)
+	int  xmmsv_dict_iter_pair_string  (xmmsv_dict_iter_t *it, xmms_pyrex_constcharpp_t key, xmms_pyrex_constcharpp_t val)
 	int  xmmsv_dict_iter_valid (xmmsv_dict_iter_t *it)
 	void xmmsv_dict_iter_first (xmmsv_dict_iter_t *it)
 	void xmmsv_dict_iter_next  (xmmsv_dict_iter_t *it)
@@ -150,6 +157,8 @@ cdef extern from "xmmsc/xmmsv.h":
 
 	int  xmmsv_dict_iter_set    (xmmsv_dict_iter_t *it, xmmsv_t *val)
 	int  xmmsv_dict_iter_remove (xmmsv_dict_iter_t *it)
+
+	void xmmsv_dict_iter_explicit_destroy (xmmsv_dict_iter_t *it)
 
 
 cdef extern from "xmms_configuration.h":
@@ -195,6 +204,10 @@ VALUE_TYPE_BIN = XMMSV_TYPE_BIN
 VALUE_TYPE_LIST = XMMSV_TYPE_LIST
 VALUE_TYPE_DICT = XMMSV_TYPE_DICT
 
+PLAYBACK_SEEK_CUR = XMMS_PLAYBACK_SEEK_CUR
+PLAYBACK_SEEK_SET = XMMS_PLAYBACK_SEEK_SET
+
+
 cdef extern from "xmmsclient/xmmsclient.h":
 	ctypedef enum xmmsc_result_type_t:
 		XMMSC_RESULT_CLASS_DEFAULT,
@@ -224,7 +237,7 @@ cdef extern from "xmmsclient/xmmsclient.h":
 	int xmmsc_connect(xmmsc_connection_t *c, char *p)
 	void xmmsc_unref(xmmsc_connection_t *c)
 	xmmsc_result_t *xmmsc_quit(xmmsc_connection_t *conn)
-	xmmsc_result_t *xmmsc_plugin_list (xmmsc_connection_t *c, unsigned int type)
+	xmmsc_result_t *xmmsc_main_list_plugins (xmmsc_connection_t *c, unsigned int type)
 
 	int xmmsv_coll_parse (char *pattern, xmmsv_coll_t **coll)
 
@@ -268,10 +281,8 @@ cdef extern from "xmmsclient/xmmsclient.h":
 	xmmsc_result_t *xmmsc_playback_start(xmmsc_connection_t *c)
 	xmmsc_result_t *xmmsc_playback_pause(xmmsc_connection_t *c)
 	xmmsc_result_t *xmmsc_playback_current_id(xmmsc_connection_t *c)
-	xmmsc_result_t *xmmsc_playback_seek_ms(xmmsc_connection_t *c, unsigned int milliseconds)
-	xmmsc_result_t *xmmsc_playback_seek_ms_rel(xmmsc_connection_t *c, int milliseconds)
-	xmmsc_result_t *xmmsc_playback_seek_samples(xmmsc_connection_t *c, unsigned int samples)
-	xmmsc_result_t *xmmsc_playback_seek_samples_rel(xmmsc_connection_t *c, int samples)
+	xmmsc_result_t *xmmsc_playback_seek_ms(xmmsc_connection_t *c, int milliseconds, xmms_playback_seek_mode_t whence)
+	xmmsc_result_t *xmmsc_playback_seek_samples(xmmsc_connection_t *c, int samples, xmms_playback_seek_mode_t whence)
 	xmmsc_result_t *xmmsc_playback_playtime(xmmsc_connection_t *c)
 	xmmsc_result_t *xmmsc_playback_status(xmmsc_connection_t *c)
 
@@ -284,12 +295,12 @@ cdef extern from "xmmsclient/xmmsclient.h":
 	xmmsc_result_t *xmmsc_playback_volume_get (xmmsc_connection_t *c)
 	xmmsc_result_t *xmmsc_broadcast_playback_volume_changed (xmmsc_connection_t *c)
 
-	xmmsc_result_t *xmmsc_configval_set(xmmsc_connection_t *c, char *key, char *val)
-	xmmsc_result_t *xmmsc_configval_list(xmmsc_connection_t *c)
-	xmmsc_result_t *xmmsc_configval_get(xmmsc_connection_t *c, char *key)
-	xmmsc_result_t *xmmsc_configval_register(xmmsc_connection_t *c, char *valuename, char *defaultvalue)
+	xmmsc_result_t *xmmsc_config_set_value(xmmsc_connection_t *c, char *key, char *val)
+	xmmsc_result_t *xmmsc_config_list_values(xmmsc_connection_t *c)
+	xmmsc_result_t *xmmsc_config_get_value(xmmsc_connection_t *c, char *key)
+	xmmsc_result_t *xmmsc_config_register_value(xmmsc_connection_t *c, char *valuename, char *defaultvalue)
 
-	xmmsc_result_t *xmmsc_broadcast_configval_changed(xmmsc_connection_t *c)
+	xmmsc_result_t *xmmsc_broadcast_config_value_changed(xmmsc_connection_t *c)
 
 	xmmsc_result_t *xmmsc_medialib_playlist_load(xmmsc_connection_t *conn, char *name)
 	xmmsc_result_t *xmmsc_medialib_add_entry(xmmsc_connection_t *conn, char *url)
@@ -372,10 +383,8 @@ cdef extern from "xmmsclient/xmmsclient.h":
 	void xmmsv_coll_attribute_set (xmmsv_coll_t *coll, char *key, char *value)
 	int xmmsv_coll_attribute_remove (xmmsv_coll_t *coll, char *key)
 	int xmmsv_coll_attribute_get (xmmsv_coll_t *coll, char *key, char **value)
-	void xmmsv_coll_attribute_list_first (xmmsv_coll_t *coll)
-	int xmmsv_coll_attribute_list_valid (xmmsv_coll_t *coll)
-	void xmmsv_coll_attribute_list_entry (xmmsv_coll_t *coll, xmms_pyrex_constcharpp_t k, xmms_pyrex_constcharpp_t v)
-	void xmmsv_coll_attribute_list_next (xmmsv_coll_t *coll)
+
+	xmmsv_t *xmmsv_coll_attributes_get (xmmsv_coll_t *coll)
 
 #####################################################################
 
@@ -552,12 +561,12 @@ cdef class CollectionOperands:
 	def __iter__(self):
 		return iter(self.pylist)
 
-	def append(self, Collection op):
+	def append(self, Collection op not None):
 		"""Append an operand"""
 		xmmsv_coll_add_operand(self.coll, op.coll)
 		self.pylist.append(op)
 		
-	def remove(self, Collection op):
+	def remove(self, Collection op not None):
 		"""Remove an operand"""
 		self.pylist.remove(op)
 		xmmsv_coll_remove_operand(self.coll, op.coll)
@@ -575,14 +584,21 @@ cdef class CollectionAttributes:
 		self.coll = NULL
 
 	def _py_dict(self):
+		cdef xmmsv_dict_iter_t *it
 		cdef char *x
 		cdef char *y
 		dct = {}
-		xmmsv_coll_attribute_list_first(self.coll)
-		while xmmsv_coll_attribute_list_valid(self.coll):
-			xmmsv_coll_attribute_list_entry(self.coll, <xmms_pyrex_constcharpp_t>&x, <xmms_pyrex_constcharpp_t>&y)
+
+		if not xmmsv_get_dict_iter(xmmsv_coll_attributes_get(self.coll), &it):
+			raise RuntimeError("Failed to get dict iterator")
+
+		xmmsv_dict_iter_first(it)
+		while xmmsv_dict_iter_valid(it):
+			xmmsv_dict_iter_pair_string(it, <xmms_pyrex_constcharpp_t>&x, <xmms_pyrex_constcharpp_t>&y)
 			dct[x] = y
-			xmmsv_coll_attribute_list_next(self.coll)
+
+			xmmsv_dict_iter_next(it)
+		xmmsv_dict_iter_explicit_destroy (it);
 		return dct
 
 	def __repr__(self):
@@ -958,6 +974,7 @@ cdef class XMMSValue:
 
 			ret[<char *>k] = V.value()
 			xmmsv_dict_iter_next(it)
+		xmmsv_dict_iter_explicit_destroy (it)
 		return ret
 
 	def get_propdict(self):
@@ -990,6 +1007,7 @@ cdef class XMMSValue:
 			ret.append(obj.value())
 
 			xmmsv_list_iter_next(iter)
+		xmmsv_list_iter_explicit_destroy(iter)
 		return ret
 
 	def iserror(self):
@@ -999,7 +1017,7 @@ cdef class XMMSValue:
 		@rtype: Boolean
 		"""
 
-		self.is_error()
+		return self.is_error()
 
 	def is_error(self):
 		"""
@@ -1316,7 +1334,7 @@ cdef class XMMS:
 		@rtype: L{XMMSResult}
 		@return: The result of the operation.
 		"""
-		return self.create_result(cb, xmmsc_plugin_list(self.conn, typ))
+		return self.create_result(cb, xmmsc_main_list_plugins(self.conn, typ))
 
 	def playback_start(self, cb = None):
 		"""
@@ -1369,19 +1387,22 @@ cdef class XMMS:
 		"""
 		return self.create_result(cb, xmmsc_playback_current_id(self.conn))
 
-	def playback_seek_ms(self, ms, cb = None):
+	def playback_seek_ms(self, ms, whence = PLAYBACK_SEEK_SET, cb = None):
 		"""
-		playback_seek_ms(ms, cb=None) -> XMMSResult
+		playback_seek_ms(ms, whence=PLAYBACK_SEEK_SET, cb=None) -> XMMSResult
 
-		Seek to an absolute time position in the current file or
-		stream in playback.
+		Seek to a time position in the current file or stream in playback.
 		@rtype: L{XMMSResult}
 		@return: The result of the operation.
 		"""
-		return self.create_result(cb, xmmsc_playback_seek_ms(self.conn, ms))
+		if whence == PLAYBACK_SEEK_SET or whence == PLAYBACK_SEEK_CUR:
+			return self.create_result(cb, xmmsc_playback_seek_ms(self.conn, ms, whence))
+		else:
+			raise ValueError("Bad whence parameter")
 
 	def playback_seek_ms_rel(self, ms, cb = None):
 		"""
+		@deprecated
 		playback_seek_ms_rel(ms, cb=None) -> XMMSResult
 
 		Seek to a time position by the given offset in the current file or
@@ -1389,21 +1410,24 @@ cdef class XMMS:
 		@rtype: L{XMMSResult}
 		@return: The result of the operation.
 		"""
-		return self.create_result(cb, xmmsc_playback_seek_ms_rel(self.conn, ms))
+		return self.create_result(cb, xmmsc_playback_seek_ms(self.conn, ms, XMMS_PLAYBACK_SEEK_CUR))
 
-	def playback_seek_samples(self, samples, cb = None):
+	def playback_seek_samples(self, samples, whence=PLAYBACK_SEEK_SET, cb = None):
 		"""
 		playback_seek_samples(samples, cb=None) -> XMMSResult
 
-		Seek to an absolute number of samples in the current file or
-		stream in playback.
+		Seek to a number of samples in the current file or stream in playback.
 		@rtype: L{XMMSResult}
 		@return: The result of the operation.
 		"""
-		return self.create_result(cb, xmmsc_playback_seek_samples(self.conn, samples))
+		if whence == PLAYBACK_SEEK_SET or whence == PLAYBACK_SEEK_CUR:
+			return self.create_result(cb, xmmsc_playback_seek_samples(self.conn, samples, whence))
+		else:
+			raise ValueError("Bad whence parameter")
 
 	def playback_seek_samples_rel(self, samples, cb = None):
 		"""
+		@deprecated
 		playback_seek_samples_rel(samples, cb=None) -> XMMSResult
 
 		Seek to a number of samples by the given offset in the
@@ -1411,7 +1435,7 @@ cdef class XMMS:
 		@rtype: L{XMMSResult}
 		@return: The result of the operation.
 		"""
-		return self.create_result(cb, xmmsc_playback_seek_samples_rel(self.conn, samples))
+		return self.create_result(cb, xmmsc_playback_seek_samples(self.conn, samples, XMMS_PLAYBACK_SEEK_CUR))
 
 	def playback_status(self, cb = None):
 		"""
@@ -1945,9 +1969,9 @@ cdef class XMMS:
 		"""
 		return self.create_result(cb, xmmsc_broadcast_playlist_changed(self.conn))
 
-	def broadcast_configval_changed(self, cb = None):
+	def broadcast_config_value_changed(self, cb = None):
 		"""
-		broadcast_configval_changed(cb=None) -> XMMSResult
+		broadcast_config_value_changed(cb=None) -> XMMSResult
 
 		Set a method to handle the config value changed broadcast
 		from the XMMS2 daemon.(i.e. some configuration value has
@@ -1955,11 +1979,17 @@ cdef class XMMS:
 		value is modified.
 		@rtype: L{XMMSResult} (the modified config key and its value)
 		"""
-		return self.create_result(cb, xmmsc_broadcast_configval_changed(self.conn))
+		return self.create_result(cb, xmmsc_broadcast_config_value_changed(self.conn))
 
-	def configval_set(self, key, val, cb = None):
+	def broadcast_configval_changed(self, cb = None):
 		"""
-		configval_set(key, val, cb=None) -> XMMSResult
+		@deprecated
+		"""
+		return self.broadcast_config_value_changed(cb)
+
+	def config_set_value(self, key, val, cb = None):
+		"""
+		config_set_value(key, val, cb=None) -> XMMSResult
 
 		Set a configuration value on the daemon, given a key.
 		@rtype: L{XMMSResult}
@@ -1967,34 +1997,52 @@ cdef class XMMS:
 		"""
 		c1 = from_unicode(key)
 		c2 = from_unicode(val)
-		return self.create_result(cb, xmmsc_configval_set(self.conn, c1, c2))
+		return self.create_result(cb, xmmsc_config_set_value(self.conn, c1, c2))
 
-	def configval_get(self, key, cb = None):
+	def configval_set(self, key, val, cb = None):
 		"""
-		configval_get(key, cb=None) -> XMMSResult
+		@deprecated
+		"""
+		return self.config_set_value(key, val, cb)
+
+	def config_get_value(self, key, cb = None):
+		"""
+		config_get_value(key, cb=None) -> XMMSResult
 
 		Get the configuration value of a given key, from the daemon.
 		@rtype: L{XMMSResult}(String)
 		@return: The result of the operation.
 		"""
 		c = from_unicode(key)
-		return self.create_result(cb, xmmsc_configval_get(self.conn, c))
+		return self.create_result(cb, xmmsc_config_get_value(self.conn, c))
 
-	def configval_list(self, cb = None):
+	def configval_get(self, key, cb = None):
 		"""
-		configval_list(cb=None) -> XMMSResult
+		@deprecated
+		"""
+		return self.config_get_value(key, cb)
+
+	def config_list_values(self, cb = None):
+		"""
+		config_list_values(cb=None) -> XMMSResult
 
 		Get list of configuration keys on the daemon. Use
-		L{configval_get} to retrieve the values corresponding to the
+		L{config_get_value} to retrieve the values corresponding to the
 		configuration keys.
 		@rtype: L{XMMSResult}(StringList)
 		@return: The result of the operation.
 		"""
-		return self.create_result(cb, xmmsc_configval_list(self.conn))
+		return self.create_result(cb, xmmsc_config_list_values(self.conn))
 
-	def configval_register(self, valuename, defaultvalue, cb = None):
+	def configval_list(self, cb = None):
 		"""
-		configval_register(valuename, defaultvalue, cb=None) -> XMMSResult
+		@deprecated
+		"""
+		return self.config_list_values(cb)
+
+	def config_register_value(self, valuename, defaultvalue, cb = None):
+		"""
+		config_register_value(valuename, defaultvalue, cb=None) -> XMMSResult
 
 		Register a new configvalue.
 		This should be called in the initcode as XMMS2 won't allow
@@ -2004,7 +2052,13 @@ cdef class XMMS:
 		"""
 		c1 = from_unicode(valuename)
 		c2 = from_unicode(defaultvalue)
-		return self.create_result(cb, xmmsc_configval_register(self.conn, c1, c2))
+		return self.create_result(cb, xmmsc_config_register_value(self.conn, c1, c2))
+
+	def configval_register(self, valuename, defaultvalue, cb = None):
+		"""
+		@deprecated
+		"""
+		return self.config_register_value(valuename, defaultvalue, cb)
 
 	def medialib_add_entry(self, file, cb = None):
 		"""
@@ -2309,9 +2363,9 @@ cdef class XMMS:
 		
 		return self.create_result(cb, xmmsc_coll_rename(self.conn, oldnam, newnam, n))
 
-	def coll_idlist_from_playlist_file(self, path):
+	def coll_idlist_from_playlist_file(self, path, cb=None):
 		"""
-		coll_idlist_from_playlist_file(path) -> XMMSResult
+		coll_idlist_from_playlist_file(path, cb=None) -> XMMSResult
 
 		Create an idlist from a playlist.
 		@rtype: L{XMMSResult}

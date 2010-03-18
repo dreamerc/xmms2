@@ -41,21 +41,47 @@
  * @param c The connection structure.
  * @param key should be &lt;clientname&gt;.myval like cli.path or something like that.
  * @param value The default value of this config value.
+ * @deprecated
  */
 xmmsc_result_t *
 xmmsc_configval_register (xmmsc_connection_t *c, const char *key,
                           const char *value)
 {
-	xmms_ipc_msg_t *msg;
+	return xmmsc_config_register_value (c, key, value);
+}
 
+/**
+ * Registers a configvalue in the server.
+ *
+ * @param c The connection structure.
+ * @param key should be &lt;clientname&gt;.myval like cli.path or something like that.
+ * @param value The default value of this config value.
+ */
+xmmsc_result_t *
+xmmsc_config_register_value (xmmsc_connection_t *c, const char *key,
+                             const char *value)
+{
 	x_check_conn (c, NULL);
 	x_api_error_if (!key, "with a NULL key", NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_CONFIG, XMMS_IPC_CMD_REGVALUE);
-	xmms_ipc_msg_put_string (msg, key);
-	xmms_ipc_msg_put_string (msg, value);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_CONFIG, XMMS_IPC_CMD_REGVALUE,
+	                       XMMSV_LIST_ENTRY_STR (key),
+	                       XMMSV_LIST_ENTRY_STR (value),
+	                       XMMSV_LIST_END);
+}
 
-	return xmmsc_send_msg (c, msg);
+/**
+ * Sets a configvalue in the server.
+ *
+ * @param c The connection structure.
+ * @param key The key of the configval to set a value for.
+ * @param val The new value of the configval.
+ * @deprecated
+ */
+xmmsc_result_t *
+xmmsc_configval_set (xmmsc_connection_t *c, const char *key, const char *val)
+{
+	return xmmsc_config_set_value (c, key, val);
 }
 
 /**
@@ -66,18 +92,16 @@ xmmsc_configval_register (xmmsc_connection_t *c, const char *key,
  * @param val The new value of the configval.
  */
 xmmsc_result_t *
-xmmsc_configval_set (xmmsc_connection_t *c, const char *key, const char *val)
+xmmsc_config_set_value (xmmsc_connection_t *c,
+                        const char *key, const char *val)
 {
-	xmms_ipc_msg_t *msg;
-
 	x_check_conn (c, NULL);
 	x_api_error_if (!key, "with a NULL key", NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_CONFIG, XMMS_IPC_CMD_SETVALUE);
-	xmms_ipc_msg_put_string (msg, key);
-	xmms_ipc_msg_put_string (msg, val);
-
-	return xmmsc_send_msg (c, msg);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_CONFIG, XMMS_IPC_CMD_SETVALUE,
+	                       XMMSV_LIST_ENTRY_STR (key),
+	                       XMMSV_LIST_ENTRY_STR (val),
+	                       XMMSV_LIST_END);
 }
 
 /**
@@ -85,19 +109,40 @@ xmmsc_configval_set (xmmsc_connection_t *c, const char *key, const char *val)
  *
  * @param c The connection structure.
  * @param key The key of the configval to retrieve.
+ * @deprecated
  */
 xmmsc_result_t *
 xmmsc_configval_get (xmmsc_connection_t *c, const char *key)
 {
-	xmms_ipc_msg_t *msg;
+	return xmmsc_config_get_value (c, key);
+}
 
+/**
+ * Retrieves a configvalue from the server
+ *
+ * @param c The connection structure.
+ * @param key The key of the configval to retrieve.
+ */
+xmmsc_result_t *
+xmmsc_config_get_value (xmmsc_connection_t *c, const char *key)
+{
 	x_check_conn (c, NULL);
 	x_api_error_if (!key, "with a NULL key", NULL);
 
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_CONFIG, XMMS_IPC_CMD_GETVALUE);
-	xmms_ipc_msg_put_string (msg, key);
+	return xmmsc_send_cmd (c, XMMS_IPC_OBJECT_CONFIG, XMMS_IPC_CMD_GETVALUE,
+	                       XMMSV_LIST_ENTRY_STR (key), XMMSV_LIST_END);
+}
 
-	return xmmsc_send_msg (c, msg);
+/**
+ * Lists all configuration values.
+ *
+ * @param c The connection structure.
+ * @deprecated
+ */
+xmmsc_result_t *
+xmmsc_configval_list (xmmsc_connection_t *c)
+{
+	return xmmsc_config_list_values (c);
 }
 
 /**
@@ -106,22 +151,34 @@ xmmsc_configval_get (xmmsc_connection_t *c, const char *key)
  * @param c The connection structure.
  */
 xmmsc_result_t *
-xmmsc_configval_list (xmmsc_connection_t *c)
+xmmsc_config_list_values (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 
 	return xmmsc_send_msg_no_arg (c, XMMS_IPC_OBJECT_CONFIG, XMMS_IPC_CMD_LISTVALUES);
 }
 
-
 /**
  * Requests the configval_changed broadcast. This will be called when a configvalue
  * has been updated.
  *
  * @param c The connection structure.
+ * @deprecated
  */
 xmmsc_result_t *
 xmmsc_broadcast_configval_changed (xmmsc_connection_t *c)
+{
+	return xmmsc_broadcast_config_value_changed (c);
+}
+
+/**
+ * Requests the config_value_changed broadcast. This will be called when a configvalue
+ * has been updated.
+ *
+ * @param c The connection structure.
+ */
+xmmsc_result_t *
+xmmsc_broadcast_config_value_changed (xmmsc_connection_t *c)
 {
 	x_check_conn (c, NULL);
 

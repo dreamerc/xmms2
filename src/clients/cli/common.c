@@ -16,12 +16,6 @@
 
 #include "common.h"
 
-gint
-val_has_key (xmmsv_t *val, const gchar *key)
-{
-	return xmmsv_dict_entry_get_type (val, key) != XMMSV_TYPE_NONE;
-}
-
 
 gchar *
 format_url (gchar *item, GFileTest test)
@@ -196,7 +190,7 @@ print_entry (const gchar *key, xmmsv_t *dict, void *udata)
 	}
 }
 
-void
+static void
 print_padded_string (gint columns, gchar padchar, gboolean padright, const gchar *fmt, ...)
 {
 	gchar buf[1024];
@@ -219,7 +213,7 @@ print_padded_string (gint columns, gchar padchar, gboolean padright, const gchar
 	g_free (padstring);
 }
 
-gchar*
+static gchar*
 make_justified_columns_format (gint columns, const char type_first)
 {
 	int wd_id, wd_artist, wd_album, wd_title;

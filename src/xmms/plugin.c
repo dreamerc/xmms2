@@ -269,9 +269,11 @@ static gboolean
 xmms_plugin_load (const xmms_plugin_desc_t *desc, GModule *module)
 {
 	xmms_plugin_t *plugin;
-	xmms_plugin_t *(*allocer) ();
+	xmms_plugin_t *(*allocer) (void);
 	gboolean (*verifier) (xmms_plugin_t *);
 	gint expected_ver;
+
+	XMMS_DBG ("Loading plugin '%s'", desc->name);
 
 	switch (desc->type) {
 	case XMMS_PLUGIN_TYPE_OUTPUT:
@@ -301,19 +303,20 @@ xmms_plugin_load (const xmms_plugin_desc_t *desc, GModule *module)
 	}
 
 	if (!xmms_plugin_setup (plugin, desc)) {
-		xmms_log_error ("Setup failed!");
+		xmms_log_error ("Setup failed for plugin '%s'!", desc->name);
 		xmms_object_unref (plugin);
 		return FALSE;
 	}
 
 	if (!desc->setup_func (plugin)) {
-		xmms_log_error ("Setup function returned error!");
+		xmms_log_error ("Setup function failed for plugin '%s'!",
+		                desc->name);
 		xmms_object_unref (plugin);
 		return FALSE;
 	}
 
 	if (!verifier (plugin)) {
-		xmms_log_error ("Verify failed for plugin!");
+		xmms_log_error ("Verify failed for plugin '%s'!", desc->name);
 		xmms_object_unref (plugin);
 		return FALSE;
 	}
@@ -366,7 +369,7 @@ xmms_plugin_scan_directory (const gchar *dir)
 		}
 
 		XMMS_DBG ("Trying to load file: %s", path);
-		module = g_module_open (path, 0);
+		module = g_module_open (path, G_MODULE_BIND_LOCAL);
 		if (!module) {
 			xmms_log_error ("Failed to open plugin %s: %s",
 			                path, g_module_error ());
@@ -391,33 +394,6 @@ xmms_plugin_scan_directory (const gchar *dir)
 	g_free (pattern);
 
 	return TRUE;
-}
-
-static gboolean
-xmms_plugin_client_list_foreach (xmms_plugin_t *plugin, gpointer data)
-{
-	xmmsv_t *dict;
-	GList **list = data;
-
-	dict = xmmsv_build_dict (
-	        XMMSV_DICT_ENTRY_STR ("name", xmms_plugin_name_get (plugin)),
-	        XMMSV_DICT_ENTRY_STR ("shortname", xmms_plugin_shortname_get (plugin)),
-	        XMMSV_DICT_ENTRY_STR ("version", xmms_plugin_version_get (plugin)),
-	        XMMSV_DICT_ENTRY_STR ("description", xmms_plugin_description_get (plugin)),
-	        XMMSV_DICT_ENTRY_INT ("type", xmms_plugin_type_get (plugin)),
-	        XMMSV_DICT_END);
-
-	*list = g_list_prepend (*list, dict);
-
-	return TRUE;
-}
-
-GList *
-xmms_plugin_client_list (xmms_object_t *main, gint32 type, xmms_error_t *err)
-{
-	GList *list = NULL;
-	xmms_plugin_foreach (type, xmms_plugin_client_list_foreach, &list);
-	return list;
 }
 
 /**

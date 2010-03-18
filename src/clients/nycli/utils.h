@@ -30,7 +30,7 @@ void done (xmmsc_result_t *res, cli_infos_t *infos);
 void tickle (xmmsc_result_t *res, cli_infos_t *infos);
 void list_plugins (cli_infos_t *infos, xmmsc_result_t *res);
 void print_stats (cli_infos_t *infos, xmmsc_result_t *res);
-void print_config (cli_infos_t *infos, xmmsc_result_t *res, gchar *confname);
+void print_config (cli_infos_t *infos, gchar *confname);
 void print_property (cli_infos_t *infos, xmmsc_result_t *res, guint id, gchar *source, gchar *property);
 void remove_ids (cli_infos_t *infos, xmmsc_result_t *res);
 void rehash_ids (cli_infos_t *infos, xmmsc_result_t *res);
@@ -47,6 +47,8 @@ void position_jump (cli_infos_t *infos, playlist_positions_t *positions);
 void positions_remove (cli_infos_t *infos, const gchar *playlist, playlist_positions_t *positions);
 void positions_move (cli_infos_t *infos, const gchar *playlist, playlist_positions_t *positions, gint pos);
 void positions_print_info (cli_infos_t *infos, playlist_positions_t *positions);
+void positions_print_list (xmmsc_result_t *res, playlist_positions_t *positions,
+                           column_display_t *coldisp, gboolean is_search);
 void configure_collection (xmmsc_result_t *res, cli_infos_t *infos, gchar *ns, gchar *name, gchar *attrname, gchar *attrvalue);
 void collection_print_config (xmmsc_result_t *res, cli_infos_t *infos, gchar *attrname);
 void coll_rename (cli_infos_t *infos, gchar *oldname, gchar *newname, xmmsc_coll_namespace_t ns, gboolean force);
@@ -68,8 +70,9 @@ void playlist_print_config (xmmsc_result_t *res, cli_infos_t *infos, gchar *play
 gboolean playlist_exists (cli_infos_t *infos, gchar *playlist);
 void print_padding (gint length, gchar padchar);
 void print_indented (const gchar *string, guint level);
-gint find_terminal_width ();
+gint find_terminal_width (void);
 gchar *format_time (guint64 duration, gboolean use_hours);
 void enrich_mediainfo (xmmsv_t *val);
+gchar *decode_url (const gchar *string);
 
 #endif /* __UTILS_H__ */
