@@ -38,7 +38,8 @@ int vis;
 short data[2];
 char buf[38+38];
 
-void draw () {
+static void
+draw (void) {
 	int i, w;
 
 	w = (int)(((double)data[0] / (double)SHRT_MAX) * 36.0);
@@ -85,7 +86,8 @@ void draw () {
 	fflush (stdout);
 }
 
-gboolean draw_gtk (gpointer stuff)
+static gboolean
+draw_gtk (gpointer stuff)
 {
 	int ret = xmmsc_visualization_chunk_get (connection, vis, data, 0, 0);
 	if (ret == 2) {
@@ -94,7 +96,8 @@ gboolean draw_gtk (gpointer stuff)
 	return (ret >= 0);
 }
 
-void shutdown_gtk (gpointer stuff)
+static void
+shutdown_gtk (gpointer stuff)
 {
 	g_main_loop_quit (mainloop);
 }
@@ -104,6 +107,8 @@ main (int argc, char **argv)
 {
 	xmmsc_result_t *res;
 	xmmsv_t *configval;
+	xmmsv_t *val;
+	const char *errmsg;
 	gchar *path = getenv ("XMMS_PATH");
 	connection = xmmsc_init ("xmms2-vistest");
 
@@ -116,14 +121,13 @@ main (int argc, char **argv)
 	res = xmmsc_visualization_version (connection);
 	xmmsc_result_wait (res);
 
-	if (xmmsc_result_iserror (res)) {
-		puts (xmmsc_result_get_error (res));
+	val = xmmsc_result_get_value (res);
+	if (xmmsv_get_error (val, &errmsg)) {
+		puts (errmsg);
 		exit (EXIT_FAILURE);
 	} else {
 		int32_t version;
-		xmmsv_t *v;
-		v = xmmsc_result_get_value (res);
-		xmmsv_get_int (v, &version);
+		xmmsv_get_int (val, &version);
 		/* insert the version you need here or instead of complaining,
 		   reduce your feature set to fit the version */
 		if (version < 1) {
@@ -135,8 +139,9 @@ main (int argc, char **argv)
 
 	res = xmmsc_visualization_init (connection);
 	xmmsc_result_wait (res);
-	if (xmmsc_result_iserror (res)) {
-		puts (xmmsc_result_get_error (res));
+	val = xmmsc_result_get_value (res);
+	if (xmmsv_get_error (val, &errmsg)) {
+		puts (errmsg);
 		exit (EXIT_FAILURE);
 	}
 	vis = xmmsc_visualization_init_handle (res);
@@ -147,11 +152,13 @@ main (int argc, char **argv)
 
 	res = xmmsc_visualization_properties_set (connection, vis, configval);
 	xmmsc_result_wait (res);
-	if (xmmsc_result_iserror (res)) {
-		puts (xmmsc_result_get_error (res));
+	val = xmmsc_result_get_value (res);
+	if (xmmsv_get_error (val, &errmsg)) {
+		puts (errmsg);
 		exit (EXIT_FAILURE);
 	}
 	xmmsc_result_unref (res);
+	xmmsv_unref (configval);
 
 	while (!xmmsc_visualization_started (connection, vis)) {
 		res = xmmsc_visualization_start (connection, vis);

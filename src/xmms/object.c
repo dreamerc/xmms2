@@ -76,8 +76,8 @@ xmms_object_cleanup (xmms_object_t *object)
 	}
 
 	if (object->cmds) {
-		/* FIXME: Shouldn't we free the commands themselves here, too?
-		 *        The old code didn't do that...
+		/* We don't need to free the commands themselves -- they are
+		 * stored in read-only memory.
 		 */
 		g_tree_destroy (object->cmds);
 	}
@@ -147,7 +147,7 @@ void
 xmms_object_disconnect (xmms_object_t *object, guint32 signalid,
                         xmms_object_handler_t handler, gpointer userdata)
 {
-	GList *list = NULL, *node;
+	GList *list, *node = NULL;
 	xmms_object_handler_entry_t *entry;
 
 	g_return_if_fail (object);
@@ -219,8 +219,11 @@ xmms_object_emit (xmms_object_t *object, guint32 signalid, xmmsv_t *data)
 	while (list2) {
 		entry = list2->data;
 
-		if (entry && entry->handler)
-			entry->handler (object, data, entry->userdata);
+		/* NULL entries may never be added to the trees. */
+		g_assert (entry);
+		g_assert (entry->handler);
+
+		entry->handler (object, data, entry->userdata);
 
 		list2 = g_list_delete_link (list2, list2);
 	}
@@ -316,7 +319,7 @@ compare_cmd_key (gconstpointer a, gconstpointer b)
   */
 void
 xmms_object_cmd_add (xmms_object_t *object, guint cmdid,
-                     xmms_object_cmd_desc_t *desc)
+                     const xmms_object_cmd_desc_t *desc)
 {
 	g_return_if_fail (object);
 	g_return_if_fail (desc);
@@ -324,7 +327,8 @@ xmms_object_cmd_add (xmms_object_t *object, guint cmdid,
 	if (!object->cmds)
 		object->cmds = g_tree_new (compare_cmd_key);
 
-	g_tree_insert (object->cmds, GUINT_TO_POINTER (cmdid), desc);
+	g_tree_insert (object->cmds, GUINT_TO_POINTER (cmdid),
+	               (gpointer) desc);
 }
 
 /**
@@ -338,11 +342,12 @@ xmms_object_cmd_call (xmms_object_t *object, guint cmdid, xmms_object_cmd_arg_t 
 
 	g_return_if_fail (object);
 
-	if (object->cmds)
+	if (object->cmds) {
 		desc = g_tree_lookup (object->cmds, GUINT_TO_POINTER (cmdid));
 
-	if (desc->func)
-		desc->func (object, arg);
+		if (desc && desc->func)
+			desc->func (object, arg);
+	}
 }
 
 
@@ -484,8 +489,7 @@ void
 __int_xmms_object_unref (xmms_object_t *object)
 {
 	g_return_if_fail (object->ref > 0);
-	object->ref--;
-	if (object->ref == 0) {
+	if (g_atomic_int_dec_and_test (&(object->ref))) {
 		if (object->destroy_func)
 			object->destroy_func (object);
 		xmms_object_cleanup (object);

@@ -11,7 +11,6 @@
 xmmsc_result_t *
 setup_shm_prepare (xmmsc_connection_t *c, int32_t vv)
 {
-	xmms_ipc_msg_t *msg;
 	xmmsc_result_t *res;
 	xmmsc_vischunk_t *buffer;
 	xmmsc_vis_unixshm_t *t;
@@ -34,14 +33,16 @@ setup_shm_prepare (xmmsc_connection_t *c, int32_t vv)
 	buffer = shmat(t->shmid, NULL, SHM_RDONLY);
 	t->buffer = buffer;
 
-	/* send packet */
-	msg = xmms_ipc_msg_new (XMMS_IPC_OBJECT_VISUALIZATION, XMMS_IPC_CMD_VISUALIZATION_INIT_SHM);
-	xmms_ipc_msg_put_int32 (msg, v->id);
 	/* we send it as string to make it work on 64bit systems.
 	   Ugly? Yes, but works. */
 	snprintf (shmidstr, sizeof (shmidstr), "%d", t->shmid);
-	xmms_ipc_msg_put_string (msg, shmidstr);
-	res = xmmsc_send_msg (c, msg);
+
+	/* send packet */
+	res = xmmsc_send_cmd (c, XMMS_IPC_OBJECT_VISUALIZATION,
+	                      XMMS_IPC_CMD_VISUALIZATION_INIT_SHM,
+	                      XMMSV_LIST_ENTRY_INT (v->id),
+	                      XMMSV_LIST_ENTRY_STR (shmidstr),
+	                      XMMSV_LIST_END);
 
 	if (res) {
 		xmmsc_result_visc_set (res, v);

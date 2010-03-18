@@ -29,7 +29,7 @@
 #include "xmms/xmms_error.h"
 #include "xmms/xmms_config.h"
 #include "xmms/xmms_streamtype.h"
-
+#include "xmms/xmms_medialib.h"
 
 G_BEGIN_DECLS
 
@@ -322,15 +322,6 @@ gint xmms_output_read (xmms_output_t *output, char *buffer, gint len);
 void xmms_output_set_error (xmms_output_t *output, xmms_error_t *error);
 
 /**
- * Get the current medialib id.
- *
- * @param output an output object
- * @param error an error object
- * @return the current medialib id
- */
-gint xmms_output_current_id (xmms_output_t *output, xmms_error_t *error);
-
-/**
  * Check if an output plugin needs format updates on each track change.
  *
  * @param plugin an output plugin object
@@ -379,6 +370,14 @@ xmms_config_property_t *xmms_output_config_property_register (xmms_output_t *out
  * @return a #xmms_config_property_t found at the given path
  */
 xmms_config_property_t *xmms_output_config_lookup (xmms_output_t *output, const gchar *path);
+
+/**
+ * Get the currently medialib id of the currently played entry
+ *
+ * @param output an output object
+ * @return the current entry as #xmms_medialib_entry_t or 0 on error
+ */
+xmms_medialib_entry_t xmms_output_current_id (xmms_output_t *output);
 
 /** @} */
 

@@ -21,16 +21,17 @@ const gchar *const default_config =
 "PROMPT=xmms2> \n"
 "SERVER_AUTOSTART=true\n"
 "AUTO_UNIQUE_COMPLETE=true\n"
+"SHELL_START_MESSAGE=true\n"
 "PLAYLIST_MARKER=->\n"
 "GUESS_PLS=false\n"
 "CLASSIC_LIST=true\n"
 "CLASSIC_LIST_FORMAT=${artist} - ${title}\n"
+"HISTORY_FILE=\n"
 "STATUS_FORMAT=${playback_status}: ${artist} - ${title}: ${playtime} of ${duration}\n\n"
 "[alias]\n\n"
 "ls = list\n"
 "clear = playlist clear\n"
-"quit = exit\n"
-"server kill = server shutdown\n"
+"quit = server shutdown\n"
 "repeat = seek 0\n"
 "mute = server volume 0\n"
 "scap = stop ; playlist clear ; add $@ ; play\n"
@@ -40,7 +41,7 @@ const gchar *const default_config =
 /* Load a section from a keyfile to a hash-table
    (replace existing keys in the hash) */
 static void
-section_to_hash (GKeyFile *file, gchar *section, GHashTable *hash)
+section_to_hash (GKeyFile *file, const gchar *section, GHashTable *hash)
 {
 	GError *error;
 	gchar **keys;
@@ -53,11 +54,14 @@ section_to_hash (GKeyFile *file, gchar *section, GHashTable *hash)
 	}
 
 	for (i = 0; keys[i] != NULL; i++) {
+		gchar *uncompressed_value;
+
+		uncompressed_value = g_key_file_get_value (file, section, keys[i],
+		                                           NULL);
 		g_hash_table_insert (hash,
 		                     g_strdup (keys[i]),
-		                     g_key_file_get_value (file,
-		                                           section, keys[i],
-		                                           NULL));
+		                     g_strcompress (uncompressed_value));
+		g_free (uncompressed_value);
 	}
 	g_strfreev (keys);
 }
@@ -66,6 +70,7 @@ configuration_t *
 configuration_init (const gchar *path)
 {
 	configuration_t *config;
+	gchar *history_file;
 
 	config = g_new0 (configuration_t, 1);
 
@@ -118,6 +123,16 @@ configuration_init (const gchar *path)
 		}
 	}
 
+	history_file = configuration_get_string (config, "HISTORY_FILE");
+	if (!history_file || !*history_file) {
+		gchar cfile[PATH_MAX];
+
+		xmms_usercachedir_get (cfile, PATH_MAX);
+		config->histpath = g_build_filename (cfile, HISTORY_FILE_BASE, NULL);
+	} else {
+		config->histpath = strdup (history_file);
+	}
+
 	return config;
 }
 
@@ -125,6 +140,7 @@ void
 configuration_free (configuration_t *config)
 {
 	g_free (config->path);
+	g_free (config->histpath);
 	g_key_file_free (config->file);
 	g_hash_table_destroy (config->values);
 	g_hash_table_destroy (config->aliases);
@@ -138,7 +154,7 @@ configuration_get_aliases (configuration_t *config)
 }
 
 gboolean
-configuration_get_boolean (configuration_t *config, gchar *key)
+configuration_get_boolean (configuration_t *config, const gchar *key)
 {
 	gchar *val;
 
@@ -154,7 +170,7 @@ configuration_get_boolean (configuration_t *config, gchar *key)
 }
 
 gchar *
-configuration_get_string (configuration_t *config, gchar *key)
+configuration_get_string (configuration_t *config, const gchar *key)
 {
 	return g_hash_table_lookup (config->values, key);
 }

@@ -149,13 +149,6 @@ done (xmmsc_result_t *res, cli_infos_t *infos)
 }
 
 void
-coldisp_finalize (xmmsc_result_t *res, column_display_t *coldisp)
-{
-	column_display_print_footer (coldisp);
-	column_display_free (coldisp);
-}
-
-void
 tickle (xmmsc_result_t *res, cli_infos_t *infos)
 {
 	xmmsc_result_t *res2;
@@ -267,18 +260,19 @@ print_config_entry (const gchar *confname, xmmsv_t *val, void *udata)
 }
 
 void
-print_config (cli_infos_t *infos, xmmsc_result_t *res, gchar *confname)
+print_config (cli_infos_t *infos, gchar *confname)
 {
+	xmmsc_result_t *res;
 	const gchar *confval;
 	xmmsv_t *val;
 
 	if (confname == NULL) {
-		res = xmmsc_configval_list (infos->sync);
+		res = xmmsc_config_list_values (infos->sync);
 		xmmsc_result_wait (res);
 		val = xmmsc_result_get_value (res);
 		xmmsv_dict_foreach (val, print_config_entry, NULL);
 	} else {
-		res = xmmsc_configval_get (infos->sync, confname);
+		res = xmmsc_config_get_value (infos->sync, confname);
 		xmmsc_result_wait (res);
 		val = xmmsc_result_get_value (res);
 		xmmsv_get_string (val, &confval);
@@ -304,7 +298,7 @@ print_property (cli_infos_t *infos, xmmsc_result_t *res, guint id,
 }
 
 /* Apply operation to an idlist */
-void
+static void
 apply_ids (cli_infos_t *infos, xmmsc_result_t *res, idlist_command_t cmd)
 {
 	const gchar *err;
@@ -648,8 +642,6 @@ static void
 pos_print_row_cb (gint pos, void *userdata)
 {
 	pl_pos_udata_t *pack = (pl_pos_udata_t *) userdata;
-	xmmsc_result_t *infores;
-	xmmsv_t *info;
 	guint id;
 
 	if (pos >= pack->entries->len) {
@@ -763,8 +755,7 @@ list_print_row (xmmsc_result_t *res, xmmsv_coll_t *filter,
 {
 	/* FIXME: w00t at code copy-paste, please modularize */
 	cli_infos_t *infos = column_display_infos_get (coldisp);
-	xmmsc_result_t *infores = NULL;
-	xmmsv_t *val, *info;
+	xmmsv_t *val;
 	GTree *list = NULL;
 
 	const gchar *err;
@@ -939,7 +930,6 @@ coll_dump (xmmsv_coll_t *coll, guint level)
 
 	gchar *attr1;
 	gchar *attr2;
-	xmmsv_coll_t *operand;
 	GString *idlist_str;
 
 	indent = g_malloc ((level * 2) + 1);
@@ -1238,7 +1228,7 @@ set_next_rel (cli_infos_t *infos, gint offset)
 
 void
 add_pls (xmmsc_result_t *plsres, cli_infos_t *infos,
-          gchar *playlist, gint pos)
+         gchar *playlist, gint pos)
 {
 	xmmsc_result_t *res;
 	xmmsv_coll_t *coll;
@@ -1365,8 +1355,6 @@ move_entries (xmmsc_result_t *matching, cli_infos_t *infos,
 		}
 		g_tree_destroy (list);
 	}
-
-    finish:
 
 	cli_infos_loop_resume (infos);
 	xmmsc_result_unref (matching);
@@ -1593,7 +1581,7 @@ configure_playlist (xmmsc_result_t *res, cli_infos_t *infos, gchar *playlist,
 	val = xmmsc_result_get_value (res);
 
 	if (xmmsv_get_coll (val, &coll)) {
-		if (type >= 0 && xmmsv_coll_get_type (coll) != type) {
+		if (xmmsv_coll_get_type (coll) != type) {
 			newcoll = coll_copy_retype (coll, type);
 			coll = newcoll;
 			copied = TRUE;
@@ -1880,4 +1868,49 @@ format_time (guint64 duration, gboolean use_hours)
 	}
 
 	return time;
+}
+
+gchar *
+decode_url (const gchar *string)
+{
+	gint i = 0, j = 0;
+	gchar *url;
+
+	url = g_strdup (string);
+	if (!url)
+		return NULL;
+
+	while (url[i]) {
+		guchar chr = url[i++];
+
+		if (chr == '+') {
+			chr = ' ';
+		} else if (chr == '%') {
+			gchar ts[3];
+			gchar *t;
+
+			ts[0] = url[i++];
+			if (!ts[0])
+				goto err;
+			ts[1] = url[i++];
+			if (!ts[1])
+				goto err;
+			ts[2] = '\0';
+
+			chr = strtoul (ts, &t, 16);
+
+			if (t != &ts[2])
+				goto err;
+		}
+
+		url[j++] = chr;
+	}
+
+	url[j] = '\0';
+
+	return url;
+
+ err:
+	g_free (url);
+	return NULL;
 }

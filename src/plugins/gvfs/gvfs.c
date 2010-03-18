@@ -38,10 +38,6 @@ static const struct {
 	const gchar *scheme;
 	const gint priority;
 } scheme_priorities[] = {
-	{ "http", 40 },
-	{ "https", 40 },
-	{ "file", 40 },
-	{ "cdda", 40 }
 };
 
 static const gchar *query_attributes = G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE ","
@@ -101,7 +97,7 @@ xmms_gvfs_plugin_setup (xmms_xform_plugin_t *xform_plugin)
 	schemes = g_vfs_get_supported_uri_schemes (vfs);
 	for (i = schemes; *i; i++) {
 		gchar *tmp = g_strconcat (*i, "://*", NULL);
-		gint priority = XMMS_STREAM_TYPE_PRIORITY_DEFAULT;
+		gint priority = XMMS_STREAM_TYPE_PRIORITY_FALLBACK;
 
 		for (j = 0; j < G_N_ELEMENTS (scheme_priorities); j++) {
 			if (g_ascii_strcasecmp (scheme_priorities[j].scheme, *i) == 0) {
@@ -288,6 +284,8 @@ xmms_gvfs_browse (xmms_xform_t *xform, const gchar *url, xmms_error_t *error)
 	                                        NULL,
 	                                        &err);
 
+	g_object_unref (file);
+
 	if (!enumerator) {
 		xmms_error_set (error, XMMS_ERROR_GENERIC, err->message);
 		return FALSE;
@@ -320,7 +318,6 @@ xmms_gvfs_browse (xmms_xform_t *xform, const gchar *url, xmms_error_t *error)
 		g_object_unref (info);
 	}
 
-	g_object_unref (file);
 	g_file_enumerator_close (enumerator, NULL, NULL);
 
 	return TRUE;

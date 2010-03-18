@@ -23,14 +23,12 @@ def build(bld):
 
 def configure(conf):
     if Options.options.pixmapdir is not None:
-        conf.env["PIXMAP_DIR"] = Options.options.pixmapdir
+        conf.env.PIXMAP_DIR = Options.options.pixmapdir
     else:
-        conf.env["PIXMAP_DIR"] = os.path.join(conf.env["PREFIX"], "share", "pixmaps")
+        conf.env.PIXMAP_DIR = os.path.join(conf.env.DATAROOTDIR, "pixmaps")
 
     if not conf.env["PIXMAP_DIR"]:
-        return False
-
-    return True
+        conf.fatal("No pixmap dir")
 
 def set_options(opt):
     opt.add_option("--with-pixmap-dir", type="string", dest="pixmapdir",

@@ -81,6 +81,8 @@ static VALUE cPlaylist;
 static VALUE eClientError, eDisconnectedError;
 static ID id_lt, id_gt;
 
+void Init_Client (VALUE);
+
 static void
 c_mark (RbXmmsClient *xmms)
 {
@@ -160,14 +162,10 @@ c_connect (int argc, VALUE *argv, VALUE self)
 	if (!NIL_P (path))
 		p = StringValuePtr (path);
 
-	if (!xmmsc_connect (xmms->real, p)) {
-		char buf[255];
-
-		snprintf (buf, sizeof (buf), "cannot connect to daemon (%s)\n",
+	if (!xmmsc_connect (xmms->real, p))
+		rb_raise (eClientError,
+		          "cannot connect to daemon (%s)",
 		          xmmsc_get_last_error (xmms->real));
-
-		rb_raise (eClientError, buf);
-	}
 
 	return self;
 }
@@ -530,14 +528,14 @@ c_broadcast_playback_current_id (VALUE self)
 
 /*
  * call-seq:
- *  xc.broadcast_configval_changed -> result
+ *  xc.broadcast_config_value_changed -> result
  *
  * Retrieves configuration properties as a broadcast.
  */
 static VALUE
-c_broadcast_configval_changed (VALUE self)
+c_broadcast_config_value_changed (VALUE self)
 {
-	METHOD_ADD_HANDLER (broadcast_configval_changed);
+	METHOD_ADD_HANDLER (broadcast_config_value_changed);
 }
 
 /*
@@ -549,7 +547,7 @@ c_broadcast_configval_changed (VALUE self)
 static VALUE
 c_playback_seek_ms (VALUE self, VALUE ms)
 {
-	METHOD_ADD_HANDLER_UINT (playback_seek_ms, ms);
+	METHOD_ADD_HANDLER_UINT (playback_seek_ms_abs, ms);
 }
 
 /*
@@ -573,7 +571,7 @@ c_playback_seek_ms_rel (VALUE self, VALUE ms)
 static VALUE
 c_playback_seek_samples (VALUE self, VALUE samples)
 {
-	METHOD_ADD_HANDLER_UINT (playback_seek_samples, samples);
+	METHOD_ADD_HANDLER_UINT (playback_seek_samples_abs, samples);
 }
 
  /*
@@ -1036,50 +1034,50 @@ c_main_stats (VALUE self)
 
 /*
  * call-seq:
- *  xc.configval_list -> result
+ *  xc.config_list_values -> result
  *
  * Retrieves a list of all config values.
  */
 static VALUE
-c_configval_list (VALUE self)
+c_config_list_values (VALUE self)
 {
-	METHOD_ADD_HANDLER (configval_list);
+	METHOD_ADD_HANDLER (config_list_values);
 }
 
 /*
  * call-seq:
- *  xc.configval_get(key) -> result
+ *  xc.config_get_value(key) -> result
  *
  * Retrieves the value of the configuration property at _key_.
  */
 static VALUE
-c_configval_get (VALUE self, VALUE key)
+c_config_get_value (VALUE self, VALUE key)
 {
-	METHOD_ADD_HANDLER_STR (configval_get, key);
+	METHOD_ADD_HANDLER_STR (config_get_value, key);
 }
 
 /*
  * call-seq:
- *  xc.configval_set(key, value) -> result
+ *  xc.config_set_value(key, value) -> result
  *
  * Sets the value of the configuration property at _key_ to _value_.
  */
 static VALUE
-c_configval_set (VALUE self, VALUE key, VALUE val)
+c_config_set_value (VALUE self, VALUE key, VALUE val)
 {
-	METHOD_ADD_HANDLER_STR_STR (configval_set, key, val);
+	METHOD_ADD_HANDLER_STR_STR (config_set_value, key, val);
 }
 
 /*
  * call-seq:
- *  xc.configval_register(key, default_value) -> result
+ *  xc.config_register_value(key, default_value) -> result
  *
  * Registers a configuration property at _key_ with the given default value.
  */
 static VALUE
-c_configval_register (VALUE self, VALUE key, VALUE defval)
+c_config_register_value (VALUE self, VALUE key, VALUE defval)
 {
-	METHOD_ADD_HANDLER_STR_STR (configval_register, key, defval);
+	METHOD_ADD_HANDLER_STR_STR (config_register_value, key, defval);
 }
 
 /*
@@ -1419,12 +1417,13 @@ parse_string_array (VALUE value)
 	int i;
 
 	if (!NIL_P (rb_check_array_type (value))) {
-		struct RArray *ary = RARRAY (value);
+		VALUE *ary = RARRAY_PTR (value);
+		int ary_len = RARRAY_LEN (value);
 
-		ret = malloc (sizeof (char *) * (ary->len + 1));
+		ret = malloc (sizeof (char *) * (ary_len + 1));
 
-		for (i = 0; i < ary->len; i++)
-			ret[i] = StringValuePtr (ary->ptr[i]);
+		for (i = 0; i < ary_len; i++)
+			ret[i] = StringValuePtr (ary[i]);
 
 		ret[i] = NULL;
 	} else {
@@ -1448,13 +1447,13 @@ parse_string_array2 (VALUE value)
 	list = xmmsv_new_list ();
 
 	if (!NIL_P (rb_check_array_type (value))) {
-		struct RArray *ary = RARRAY (value);
-		int i;
+		VALUE *ary = RARRAY_PTR (value);
+		int i, ary_len = RARRAY_LEN (value);
 
-		for (i = 0; i < ary->len; i++) {
+		for (i = 0; i < ary_len; i++) {
 			xmmsv_t *elem;
 
-			elem = xmmsv_new_string (StringValuePtr (ary->ptr[i]));
+			elem = xmmsv_new_string (StringValuePtr (ary[i]));
 			xmmsv_list_append (list, elem);
 			xmmsv_unref (elem);
 		}
@@ -1572,12 +1571,12 @@ Init_Client (VALUE mXmms)
 	rb_define_method (c, "plugin_list", c_plugin_list, -1);
 	rb_define_method (c, "main_stats", c_main_stats, 0);
 
-	rb_define_method (c, "configval_list", c_configval_list, 0);
-	rb_define_method (c, "configval_get", c_configval_get, 1);
-	rb_define_method (c, "configval_set", c_configval_set, 2);
-	rb_define_method (c, "configval_register", c_configval_register, 2);
-	rb_define_method (c, "broadcast_configval_changed",
-	                  c_broadcast_configval_changed, 0);
+	rb_define_method (c, "config_list_values", c_config_list_values, 0);
+	rb_define_method (c, "config_get_value", c_config_get_value, 1);
+	rb_define_method (c, "config_set_value", c_config_set_value, 2);
+	rb_define_method (c, "config_register_value", c_config_register_value, 2);
+	rb_define_method (c, "broadcast_config_value_changed",
+	                  c_broadcast_config_value_changed, 0);
 
 	rb_define_method (c, "bindata_add", c_bindata_add, 1);
 	rb_define_method (c, "bindata_retrieve", c_bindata_retrieve, 1);
